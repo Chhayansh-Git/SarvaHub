@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SarvaHub Glassmorphism Seller Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#c9a96e",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#0D0D0D",
+                        "surface-dark": "#1A1A1A",
+                        "surface-highlight": "#252525",
+                        "text-main": "#F5F5F5",
+                        "text-muted": "#A1A1AA",
+                    },
+                    fontFamily: {
+                        display: ["Manrope", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 15s ease infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'border-glow': 'border-glow 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            },
+                        },
+                        'border-glow': {
+                            '0%, 100%': { opacity: '0.5' },
+                            '50%': { opacity: '1' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2); 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4); 
+        }.glass-panel {
+            background: rgba(26, 26, 26, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-sidebar {
+            background: rgba(13, 13, 13, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }.mesh-bg {
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #111827, #312e81);
+            background-size: 400% 400%;
+            animation: gradient-bg 15s ease infinite;
+        }
+        @keyframes gradient-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .hover-glow:hover {
+            box-shadow: 0 0 20px rgba(201, 169, 110, 0.15);
+            border-color: rgba(201, 169, 110, 0.3);
+        }
+        .chart-line-glow {
+            filter: drop-shadow(0 0 4px rgba(201, 169, 110, 0.6));
+            animation: pulse-line 3s infinite;
+        }
+        @keyframes pulse-line {
+            0% { filter: drop-shadow(0 0 2px rgba(201, 169, 110, 0.4)); }
+            50% { filter: drop-shadow(0 0 8px rgba(201, 169, 110, 0.8)); }
+            100% { filter: drop-shadow(0 0 2px rgba(201, 169, 110, 0.4)); }
+        }
+    </style>
+</head>
+<body class="mesh-bg text-slate-900 dark:text-text-main font-display antialiased overflow-hidden">
+<div class="flex h-screen w-full overflow-hidden relative z-10">
+<aside class="glass-sidebar flex w-[260px] flex-col justify-between p-6 transition-all duration-300 z-20">
+<div class="flex flex-col gap-8">
+<div class="flex items-center gap-3 px-2">
+<div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary ring-1 ring-primary/30 shadow-[0_0_15px_rgba(201,169,110,0.3)]">
+<span class="material-symbols-outlined text-2xl">diamond</span>
+</div>
+<h1 class="text-xl font-bold tracking-wide text-white drop-shadow-md">SarvaHub</h1>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="group flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-3 text-primary transition-colors border border-primary/10 shadow-[inset_0_0_10px_rgba(201,169,110,0.1)]" href="#">
+<span class="material-symbols-outlined filled">dashboard</span>
+<span class="text-sm font-semibold">Dashboard</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-3 text-text-muted hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="text-sm font-medium">Products</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-3 text-text-muted hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">package_2</span>
+<span class="text-sm font-medium">Orders</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-3 text-text-muted hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="text-sm font-medium">Analytics</span>
+</a>
+<a class="group flex items-center gap-3 rounded-lg px-3 py-3 text-text-muted hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<button class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-black hover:bg-[#d4b983] transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-[1.02]">
+<span>New Listing</span>
+<span class="material-symbols-outlined text-lg">add</span>
+</button>
+</div>
+<div class="flex items-center gap-3 border-t border-white/10 pt-6">
+<div class="h-10 w-10 overflow-hidden rounded-full ring-2 ring-white/10" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBGP1KRN5JSCTcUsYp1HNuxoQAIL-qc-wp3S3GwlAkaoIldw9oiEthccWtRxc2HtWeNz9u0sKg6c_GXDvkT3uMcm7rFR682lU9bK-e2rmpx_ZHU7ETc-Y6BGPyZgLGu1HYEuKaaXkXCjQRTkbWs9P-CTjBHWDWpyKyNg295BPLxdT04lN5hwkkzk7NzX1azw8CdY8ZnVy4JbQXCqGoC0cCKK_UWdC7erIRfXmLn9uaYkkDPvZTK0t1Gt76QfijPDfwSoQi0NH1Rm8o'); background-size: cover; background-position: center;"></div>
+<div class="flex flex-col">
+<p class="text-sm font-bold text-white">Chhayansh</p>
+<p class="text-xs text-text-muted">Pro Seller</p>
+</div>
+<button class="ml-auto text-text-muted hover:text-white transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+</aside>
+<main class="flex flex-1 flex-col overflow-y-auto p-8 relative">
+<header class="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+<div>
+<h2 class="text-3xl font-extrabold tracking-tight text-white md:text-4xl drop-shadow-sm">Welcome back, Chhayansh</h2>
+<p class="mt-1 text-text-muted">Here's what's happening with your store today.</p>
+</div>
+<div class="flex items-center gap-4">
+<button aria-label="Toggle theme" class="flex h-10 w-10 items-center justify-center rounded-lg glass-panel text-text-muted hover:text-white hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">light_mode</span>
+</button>
+<div class="flex items-center gap-2 rounded-lg glass-panel px-4 py-2 text-sm text-text-muted">
+<span class="material-symbols-outlined text-lg">calendar_today</span>
+<span>Oct 24, 2023</span>
+</div>
+</div>
+</header>
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+<div class="glass-panel relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover-glow">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-sm font-medium text-text-muted">Total Revenue</p>
+<h3 class="mt-2 text-2xl font-bold text-white">$24,580</h3>
+</div>
+<div class="rounded-full bg-green-500/10 p-2 text-green-500 ring-1 ring-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
+<span class="material-symbols-outlined text-xl">payments</span>
+</div>
+</div>
+<div class="mt-4 flex items-center text-sm">
+<span class="text-green-500 font-medium">+12.5%</span>
+<span class="ml-2 text-text-muted">from last month</span>
+</div>
+<div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/20 blur-3xl"></div>
+</div>
+<div class="glass-panel relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover-glow">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-sm font-medium text-text-muted">Orders</p>
+<h3 class="mt-2 text-2xl font-bold text-white">342</h3>
+</div>
+<div class="rounded-full bg-blue-500/10 p-2 text-blue-500 ring-1 ring-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]">
+<span class="material-symbols-outlined text-xl">shopping_cart</span>
+</div>
+</div>
+<div class="mt-4 flex items-center text-sm">
+<span class="text-green-500 font-medium">+8.3%</span>
+<span class="ml-2 text-text-muted">from last month</span>
+</div>
+</div>
+<div class="glass-panel relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover-glow">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-sm font-medium text-text-muted">Products Listed</p>
+<h3 class="mt-2 text-2xl font-bold text-white">47</h3>
+</div>
+<div class="rounded-full bg-purple-500/10 p-2 text-purple-500 ring-1 ring-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]">
+<span class="material-symbols-outlined text-xl">inventory_2</span>
+</div>
+</div>
+<div class="mt-4 flex items-center text-sm">
+<span class="text-text-muted font-medium">All active</span>
+<span class="ml-2 text-text-muted">in store</span>
+</div>
+</div>
+<div class="glass-panel relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover-glow">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-sm font-medium text-text-muted">Conversion Rate</p>
+<h3 class="mt-2 text-2xl font-bold text-white">3.2%</h3>
+</div>
+<div class="rounded-full bg-primary/10 p-2 text-primary ring-1 ring-primary/20 shadow-[0_0_10px_rgba(201,169,110,0.1)]">
+<span class="material-symbols-outlined text-xl">trending_up</span>
+</div>
+</div>
+<div class="mt-4 flex items-center text-sm">
+<span class="text-red-500 font-medium">-0.4%</span>
+<span class="ml-2 text-text-muted">from last week</span>
+</div>
+</div>
+</div>
+<div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+<div class="glass-panel rounded-xl p-6 lg:col-span-2">
+<div class="mb-6 flex items-center justify-between">
+<div>
+<h3 class="text-lg font-bold text-white">Revenue Trend</h3>
+<p class="text-sm text-text-muted">Last 7 days performance</p>
+</div>
+<button class="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition-colors">
+                            Last 7 Days
+                            <span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+</button>
+</div>
+<div class="relative h-64 w-full">
+<svg class="h-full w-full overflow-visible" viewBox="0 0 800 250">
+<defs>
+<linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#c9a96e" stop-opacity="0.4"></stop>
+<stop offset="100%" stop-color="#c9a96e" stop-opacity="0"></stop>
+</linearGradient>
+</defs>
+<path d="M0,200 Q100,150 200,180 T400,120 T600,80 T800,40 V250 H0 Z" fill="url(#chartGradient)"></path>
+<path class="chart-line-glow" d="M0,200 Q100,150 200,180 T400,120 T600,80 T800,40" fill="none" stroke="#c9a96e" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+<circle cx="0" cy="200" fill="#1A1A1A" r="4" stroke="#c9a96e" stroke-width="2"></circle>
+<circle cx="200" cy="180" fill="#1A1A1A" r="4" stroke="#c9a96e" stroke-width="2"></circle>
+<circle cx="400" cy="120" fill="#1A1A1A" r="4" stroke="#c9a96e" stroke-width="2"></circle>
+<circle cx="600" cy="80" fill="#1A1A1A" r="4" stroke="#c9a96e" stroke-width="2"></circle>
+<circle cx="800" cy="40" fill="#1A1A1A" r="4" stroke="#c9a96e" stroke-width="2"></circle>
+<line stroke="rgba(255,255,255,0.1)" stroke-width="1" x1="0" x2="800" y1="250" y2="250"></line>
+<line opacity="0.3" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="800" y1="180" y2="180"></line>
+<line opacity="0.3" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="800" y1="110" y2="110"></line>
+<line opacity="0.3" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="800" y1="40" y2="40"></line>
+</svg>
+<div class="mt-2 flex justify-between text-xs font-medium text-text-muted">
+<span>Mon</span>
+<span>Tue</span>
+<span>Wed</span>
+<span>Thu</span>
+<span>Fri</span>
+<span>Sat</span>
+<span>Sun</span>
+</div>
+</div>
+</div>
+<div class="glass-panel flex flex-col rounded-xl p-6 lg:col-span-3">
+<div class="mb-6 flex items-center justify-between">
+<h3 class="text-lg font-bold text-white">Recent Orders</h3>
+<a class="text-sm font-medium text-primary hover:text-[#d4b983] transition-colors" href="#">View all</a>
+</div>
+<div class="w-full overflow-x-auto">
+<table class="w-full min-w-[600px] text-left">
+<thead>
+<tr class="border-b border-white/10 text-sm font-medium text-text-muted">
+<th class="pb-3 pl-2">Order ID</th>
+<th class="pb-3">Customer</th>
+<th class="pb-3">Product</th>
+<th class="pb-3">Amount</th>
+<th class="pb-3 pr-2 text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5 text-sm">
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="py-4 pl-2 font-medium text-white">#ORD-7321</td>
+<td class="py-4 text-text-muted">Alice M.</td>
+<td class="py-4 text-text-muted">Gold Watch</td>
+<td class="py-4 font-medium text-white">$1,200</td>
+<td class="py-4 pr-2 text-right">
+<span class="inline-flex items-center rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-500 ring-1 ring-inset ring-green-500/20 animate-pulse-slow">
+                                            Delivered
+                                        </span>
+</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="py-4 pl-2 font-medium text-white">#ORD-7322</td>
+<td class="py-4 text-text-muted">Bob S.</td>
+<td class="py-4 text-text-muted">Leather Bag</td>
+<td class="py-4 font-medium text-white">$850</td>
+<td class="py-4 pr-2 text-right">
+<span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-500/20 animate-pulse-slow">
+                                            Shipped
+                                        </span>
+</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="py-4 pl-2 font-medium text-white">#ORD-7323</td>
+<td class="py-4 text-text-muted">Charlie D.</td>
+<td class="py-4 text-text-muted">Silk Scarf</td>
+<td class="py-4 font-medium text-white">$250</td>
+<td class="py-4 pr-2 text-right">
+<span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20 animate-pulse-slow">
+                                            Processing
+                                        </span>
+</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="py-4 pl-2 font-medium text-white">#ORD-7324</td>
+<td class="py-4 text-text-muted">Diana P.</td>
+<td class="py-4 text-text-muted">Sunglasses</td>
+<td class="py-4 font-medium text-white">$320</td>
+<td class="py-4 pr-2 text-right">
+<span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20 animate-pulse-slow">
+                                            Processing
+                                        </span>
+</td>
+</tr>
+<tr class="group hover:bg-white/5 transition-colors">
+<td class="py-4 pl-2 font-medium text-white">#ORD-7325</td>
+<td class="py-4 text-text-muted">Evan R.</td>
+<td class="py-4 text-text-muted">Designer Belt</td>
+<td class="py-4 font-medium text-white">$150</td>
+<td class="py-4 pr-2 text-right">
+<span class="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-500 ring-1 ring-inset ring-red-500/20 animate-pulse-slow">
+                                            Cancelled
+                                        </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

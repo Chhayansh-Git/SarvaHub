@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SarvaHub Checkout</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+            extend: {
+                colors: {
+                "primary": "#c9a96e",
+                "background-light": "#f8f7f6",
+                "background-dark": "#1e1a14",
+                "neutral-surface": "#f3f3f1",
+                "neutral-border": "#e3e1de",
+                },
+                fontFamily: {
+                "display": ["Manrope", "sans-serif"]
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                animation: {
+                    'gradient-x': 'gradient-x 15s ease infinite',
+                    'shimmer': 'shimmer 2.5s infinite',
+                },
+                keyframes: {
+                    'gradient-x': {
+                        '0%, 100%': {
+                            'background-size': '200% 200%',
+                            'background-position': 'left center'
+                        },
+                        '50%': {
+                            'background-size': '200% 200%',
+                            'background-position': 'right center'
+                        },
+                    },
+                    'shimmer': {
+                        '0%': { transform: 'translateX(-150%)' },
+                        '100%': { transform: 'translateX(150%)' },
+                    }
+                }
+            },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }.animated-bg {
+            background: linear-gradient(-45deg, #e6e6fa, #fff8dc, #fdf5e6, #f3e5ab);
+            background-size: 400% 400%;
+            animation: gradient-bg 15s ease infinite;
+        }
+        .dark .animated-bg {
+            background: linear-gradient(-45deg, #1a1625, #2c241b, #1e1a14, #2a2620);
+            background-size: 400% 400%;
+            animation: gradient-bg 15s ease infinite;
+        }
+        @keyframes gradient-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }.glass-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        .dark .glass-card {
+            background: rgba(30, 26, 20, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+        }
+        .dark .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: #c9a96e;
+            box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.2);
+        }
+        .dark .glass-input:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: #c9a96e;
+            box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.2);
+        }::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(241, 241, 241, 0.5); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(201, 169, 110, 0.5); 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(201, 169, 110, 0.8); 
+        }#cursor-glow {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(201, 169, 110, 0.15) 0%, rgba(201, 169, 110, 0) 70%);
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            transition: opacity 0.3s ease;
+            mix-blend-mode: screen;}
+        .dark #cursor-glow {
+            background: radial-gradient(circle, rgba(201, 169, 110, 0.1) 0%, rgba(201, 169, 110, 0) 70%);
+        }
+    </style>
+<script>
+        document.addEventListener('mousemove', (e) => {
+            const cursor = document.getElementById('cursor-glow');
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+        // Toggle Dark Mode
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+    </script>
+</head>
+<body class="animated-bg text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display antialiased transition-colors duration-500">
+<div id="cursor-glow"></div>
+<header class="sticky top-0 z-50 w-full border-b border-white/20 bg-white/60 dark:bg-black/60 backdrop-blur-md px-6 py-4 transition-all duration-300">
+<div class="mx-auto flex max-w-[1280px] items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="size-8 text-primary relative">
+<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<div class="absolute inset-0 bg-primary/20 blur-lg rounded-full -z-10"></div>
+</div>
+<h1 class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm">SarvaHub</h1>
+</div>
+<div class="flex items-center gap-6">
+<button class="p-2 rounded-full hover:bg-white/20 dark:hover:bg-black/20 transition-colors text-slate-600 dark:text-slate-300 focus:outline-none" onclick="toggleDarkMode()">
+<span class="material-symbols-outlined text-[20px] dark:hidden">dark_mode</span>
+<span class="material-symbols-outlined text-[20px] hidden dark:block">light_mode</span>
+</button>
+<div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+<span class="hidden sm:inline text-sm font-semibold uppercase tracking-wide">Secure Checkout</span>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow w-full px-4 py-8 md:py-12 relative z-10">
+<div class="mx-auto max-w-[1280px]">
+<div class="mb-12">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-4xl mx-auto">
+<div class="flex items-center gap-3 w-full md:w-auto group">
+<div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 backdrop-blur-sm border border-green-500/30 text-green-700 dark:text-green-400 shrink-0 shadow-sm transition-transform group-hover:scale-105">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-800 dark:text-slate-100">Account</span>
+<span class="text-xs text-slate-500 dark:text-slate-400">Signed In</span>
+</div>
+<div class="hidden md:block h-[2px] w-16 bg-green-500/30 ml-4 rounded-full"></div>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto opacity-100">
+<div class="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary/90 text-white shrink-0 shadow-lg shadow-primary/40 ring-4 ring-primary/20 backdrop-blur-sm">
+<span class="text-sm font-bold">2</span>
+<div class="absolute inset-0 rounded-full animate-ping bg-primary opacity-20"></div>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-primary drop-shadow-sm">Shipping</span>
+<span class="text-xs text-slate-600 dark:text-slate-300 font-medium">In Progress</span>
+</div>
+<div class="hidden md:block h-[2px] w-16 bg-slate-300/50 dark:bg-slate-700 ml-4 rounded-full"></div>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto opacity-60">
+<div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-400/30 bg-white/10 backdrop-blur-sm text-slate-500 dark:text-slate-400 shrink-0">
+<span class="text-sm font-bold">3</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-500 dark:text-slate-400">Payment</span>
+<span class="text-xs text-slate-400 dark:text-slate-500">Upcoming</span>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16">
+<div class="lg:col-span-7 xl:col-span-7 space-y-8">
+<div class="glass-card p-8 rounded-2xl relative overflow-hidden">
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 relative z-10">Shipping Address</h2>
+<form class="space-y-6 relative z-10">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">First Name</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="Jane" type="text"/>
+</label>
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Last Name</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="Doe" type="text"/>
+</label>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Email Address</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="jane@example.com" type="email"/>
+</label>
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Phone Number</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="(555) 123-4567" type="tel"/>
+</label>
+</div>
+<div class="pt-2 space-y-5">
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Street Address</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="123 Luxury Lane, Apt 4B" type="text"/>
+</label>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">City</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="New York" type="text"/>
+</label>
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">State / Province</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="NY" type="text"/>
+</label>
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">ZIP Code</span>
+<input class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none" placeholder="10001" type="text"/>
+</label>
+</div>
+<label class="block">
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Country</span>
+<select class="glass-input w-full rounded-xl h-12 px-4 text-slate-900 dark:text-white focus:outline-none">
+<option>United States</option>
+<option>Canada</option>
+<option>United Kingdom</option>
+<option>France</option>
+<option>Germany</option>
+<option>Japan</option>
+</select>
+</label>
+</div>
+<div class="flex items-center gap-3 pt-2">
+<input class="rounded border-neutral-border text-primary focus:ring-primary w-5 h-5 cursor-pointer bg-white/50 dark:bg-black/30 backdrop-blur-sm" id="save-address" type="checkbox"/>
+<label class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none font-medium" for="save-address">Save this address for faster checkout next time.</label>
+</div>
+<div class="pt-6">
+<button class="group relative w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#b89a63] px-10 py-4 text-base font-bold text-slate-900 shadow-lg shadow-primary/30 transition-all hover:shadow-primary/50 hover:-translate-y-0.5 active:translate-y-0 overflow-hidden" type="button">
+<span class="absolute top-0 left-0 -ml-10 h-full w-20 skew-x-[-25deg] bg-white/30 blur-md animate-shimmer"></span>
+<span class="relative z-10">Continue to Payment</span>
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1 relative z-10">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+<div class="lg:col-span-5 xl:col-span-5">
+<div class="sticky top-24 glass-card rounded-2xl p-6 md:p-8">
+<div class="flex items-center justify-between mb-6 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Order Summary</h3>
+<span class="px-3 py-1 rounded-full bg-white/40 dark:bg-black/40 text-xs font-semibold text-slate-600 dark:text-slate-300 backdrop-blur-sm">3 Items</span>
+</div>
+<div class="space-y-4 mb-6">
+<div class="flex gap-4 group">
+<div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white/50 border border-white/40 dark:border-white/10 shadow-sm transition-transform group-hover:scale-105">
+<img alt="Nike Air Max" class="h-full w-full object-cover" data-alt="Red high top sneaker side view" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiBuQH2UVcYpNT9JA_nmOhz3-fy5P2XZWPcP0YvTpxNIPuOEvnkvnN5EH0LVvbhMjsPJZRlBcCR7K7cOvlnGbnYHTLBLnysPWSk9y2Uf_OP-yvjMEg4eCGXYLWJ_csDS9wMChA6Ps6bY2jaTn3hZxDMtUsGizULI44_tBXgQDT-zaNiNJgtv_x3kHgotAoGY_chFuti3bdvJ2Ed7MeeP_pnO4YHkJgXX__I_72tqOjsmrSx4oeveWzSO0BYmNjUvOhP6cV7IsoXcw"/>
+</div>
+<div class="flex flex-1 flex-col justify-between py-1">
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Nike Air Max</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Size: 10, Color: Red</p>
+</div>
+<div class="flex justify-between items-end">
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">Qty: 1</span>
+<span class="text-sm font-bold text-slate-900 dark:text-white">$180.00</span>
+</div>
+</div>
+</div>
+<div class="flex gap-4 group">
+<div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white/50 border border-white/40 dark:border-white/10 shadow-sm transition-transform group-hover:scale-105">
+<img alt="Classic Watch" class="h-full w-full object-cover" data-alt="White minimalist wrist watch" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2VL6NnRphfZSUT613PauFv_mO6ymOhYnlH5hEieJSi27MF50r0Z7CqnEvsmojTvM5kLqBqiBjpsUxzDNOnBbC1tJmf07Mb1SfoEsYV4tAgG37vyhfwzEaIgKkeDX63MwlyT4_aERfovfrnZX7V2SJVhngq1RhoanJDjrwL2rs3Ys7SASFFNEXJTAEVUeAHPW6IOBS48DEA5mE7gUN_gTLbj6mNa_kexvivoc9O-TQq6tS2PP6bFlfrP2vVZDoG44IBBPRTjLpmE0"/>
+</div>
+<div class="flex flex-1 flex-col justify-between py-1">
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Minimalist Watch</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Silver / Black Leather</p>
+</div>
+<div class="flex justify-between items-end">
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">Qty: 1</span>
+<span class="text-sm font-bold text-slate-900 dark:text-white">$249.00</span>
+</div>
+</div>
+</div>
+<div class="flex gap-4 group">
+<div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white/50 border border-white/40 dark:border-white/10 shadow-sm transition-transform group-hover:scale-105">
+<img alt="Leather Wallet" class="h-full w-full object-cover" data-alt="Brown leather wallet open" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA17HpQq86LqN9Uv-o0b8pyUZNUdRyVixZVk9QhJv8lSjLDs7reJQ6JJW8VrWCng38hZ9BSM-FQQ5_UQ-rsPdFTubvvqBcIgyWxdFHQ6DJmxhmGPObJOZe_QJll9qBPxE02dnsjJJgbl93J1eHnw4Swh0VSWKasn03hVnqgR_lag3VfPWON5EodddZsQ7smeF6jvW6G_hsgVkJcYIsCa4g6lOsR_jCeq9mTWpoIXjACoxDCJAiHmaCKpHBcLJmY-o_usffsGjxFtwI"/>
+</div>
+<div class="flex flex-1 flex-col justify-between py-1">
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white leading-tight">Leather Wallet</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Genuine Leather</p>
+</div>
+<div class="flex justify-between items-end">
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">Qty: 1</span>
+<span class="text-sm font-bold text-slate-900 dark:text-white">$38.97</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mb-6 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
+<label class="block mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Discount Code</label>
+<div class="flex gap-2">
+<input class="glass-input flex-1 rounded-xl text-sm px-3 py-2.5 focus:outline-none text-slate-900 dark:text-white placeholder-slate-400" placeholder="Enter coupon" type="text"/>
+<button class="rounded-xl bg-slate-800/80 dark:bg-slate-700/80 backdrop-blur-sm px-4 py-2 text-sm font-bold text-white hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors shadow-lg" type="button">Apply</button>
+</div>
+</div>
+<div class="space-y-3 border-t border-slate-200/50 dark:border-slate-700/50 pt-6">
+<div class="flex justify-between text-sm text-slate-700 dark:text-slate-300">
+<span>Subtotal</span>
+<span class="font-medium">$467.97</span>
+</div>
+<div class="flex justify-between text-sm text-slate-700 dark:text-slate-300">
+<span>Shipping</span>
+<span class="font-medium text-green-600 dark:text-green-400">Free</span>
+</div>
+<div class="flex justify-between text-sm text-slate-700 dark:text-slate-300">
+<span>Estimated Tax</span>
+<span class="font-medium">$0.00</span>
+</div>
+<div class="flex justify-between items-center pt-4 mt-2 border-t border-slate-200/50 dark:border-slate-700/50">
+<span class="text-base font-bold text-slate-900 dark:text-white">Total</span>
+<span class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 tracking-tight">$467.97</span>
+</div>
+</div>
+<div class="mt-6 flex justify-center gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-300">
+<div class="h-6 w-10 rounded bg-slate-400/30 backdrop-blur-sm border border-white/10"></div>
+<div class="h-6 w-10 rounded bg-slate-400/30 backdrop-blur-sm border border-white/10"></div>
+<div class="h-6 w-10 rounded bg-slate-400/30 backdrop-blur-sm border border-white/10"></div>
+<div class="h-6 w-10 rounded bg-slate-400/30 backdrop-blur-sm border border-white/10"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="mt-auto border-t border-white/20 bg-white/30 dark:bg-black/30 backdrop-blur-sm py-8 text-center text-sm text-slate-600 dark:text-slate-400">
+<p>© 2024 SarvaHub Inc. All rights reserved.</p>
+<div class="mt-2 space-x-4">
+<a class="hover:underline hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:underline hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:underline hover:text-primary transition-colors" href="#">Returns</a>
+</div>
+</footer>
+
+</body></html>

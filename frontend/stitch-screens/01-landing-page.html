@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SarvaHub Glassmorphism Landing Page</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#c9a96e",
+                        "glass-light": "rgba(255, 255, 255, 0.7)",
+                        "glass-dark": "rgba(30, 26, 20, 0.7)",
+                        "glass-border": "rgba(255, 255, 255, 0.2)",
+                        "text-primary": "#161513",
+                        "text-secondary": "#80786b",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    backgroundImage: {
+                        'mesh-light': 'radial-gradient(at 0% 0%, rgba(201, 169, 110, 0.15) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(100, 100, 255, 0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(201, 169, 110, 0.1) 0px, transparent 50%), radial-gradient(at 0% 100%, rgba(100, 200, 200, 0.1) 0px, transparent 50%)',
+                        'mesh-dark': 'radial-gradient(at 0% 0%, rgba(20, 20, 30, 1) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(40, 20, 60, 1) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(20, 50, 60, 1) 0px, transparent 50%), radial-gradient(at 0% 100%, rgba(30, 30, 40, 1) 0px, transparent 50%)',
+                        'hero-overlay': 'linear-gradient(to right, rgba(20, 10, 40, 0.85), rgba(10, 30, 60, 0.7), rgba(0, 50, 60, 0.5))'
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem", 
+                        "lg": "2rem", 
+                        "xl": "3rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        .glass-panel {
+            @apply bg-white/10 backdrop-blur-lg border border-white/20 shadow-xl;
+        }
+        .glass-panel-light {
+            @apply bg-white/60 backdrop-blur-md border border-white/40 shadow-sm;
+        }
+        .glass-btn {
+            @apply bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 transition-all duration-300;
+        }.orb {
+            @apply absolute rounded-full blur-3xl opacity-30 pointer-events-none;
+            animation: float 10s infinite ease-in-out;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+            100% { transform: translateY(0px) translateX(0px); }
+        }
+    </style>
+</head>
+<body class="bg-mesh-light text-text-primary font-display antialiased overflow-x-hidden min-h-screen relative">
+<div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+<div class="orb w-96 h-96 bg-blue-400 -top-20 -left-20"></div>
+<div class="orb w-80 h-80 bg-purple-400 top-1/3 right-0 animation-delay-2000"></div>
+<div class="orb w-72 h-72 bg-primary bottom-0 left-1/4 animation-delay-4000"></div>
+</div>
+<nav class="sticky top-0 z-50 w-full bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-sm">
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-20 gap-4">
+<div class="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+<span class="material-symbols-outlined text-3xl text-primary">diamond</span>
+<h1 class="text-2xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">SarvaHub</h1>
+</div>
+<div class="hidden md:flex flex-1 max-w-xl mx-4">
+<div class="relative w-full group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-text-secondary group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="block w-full pl-12 pr-20 py-3 bg-white/40 border border-white/30 rounded-full text-sm font-medium placeholder-text-secondary focus:border-primary focus:bg-white/80 focus:ring-0 transition-all duration-300 shadow-inner backdrop-blur-sm" placeholder="Search for products, brands and more..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1">
+<button class="p-2 rounded-full hover:bg-black/5 text-text-secondary hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+<button class="p-2 rounded-full hover:bg-black/5 text-text-secondary hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">photo_camera</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 sm:gap-4">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/50 transition-colors relative group">
+<span class="material-symbols-outlined">light_mode</span>
+<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white/80 px-1 rounded shadow-sm backdrop-blur">Theme</span>
+</button>
+<div class="h-6 w-px bg-gray-300 mx-1"></div>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/50 transition-colors relative group">
+<span class="material-symbols-outlined">person</span>
+<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white/80 px-1 rounded shadow-sm backdrop-blur">Account</span>
+</button>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/50 transition-colors relative group">
+<span class="material-symbols-outlined">favorite</span>
+<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white/80 px-1 rounded shadow-sm backdrop-blur">Saved</span>
+</button>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/50 transition-colors relative group">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_rgba(201,169,110,0.8)]"></span>
+<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white/80 px-1 rounded shadow-sm backdrop-blur">Cart</span>
+</button>
+</div>
+</div>
+</div>
+</nav>
+<div class="md:hidden px-4 py-3 bg-white/60 backdrop-blur-md border-b border-white/30">
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-text-secondary text-sm">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2 bg-white/40 border border-white/30 rounded-full text-sm placeholder-text-secondary focus:border-primary focus:ring-0" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="bg-white/30 backdrop-blur-sm py-4 border-b border-white/20 overflow-x-auto">
+<div class="max-w-[1440px] mx-auto px-4 flex gap-3 min-w-max">
+<a class="px-6 py-2 bg-primary/90 text-white rounded-full text-sm font-bold shadow-lg hover:shadow-primary/40 transition-all transform hover:-translate-y-0.5 backdrop-blur-sm border border-primary/20" href="#">New Arrivals</a>
+<a class="px-6 py-2 glass-panel-light text-text-primary rounded-full text-sm font-medium hover:bg-white/80 hover:text-primary transition-colors" href="#">Men</a>
+<a class="px-6 py-2 glass-panel-light text-text-primary rounded-full text-sm font-medium hover:bg-white/80 hover:text-primary transition-colors" href="#">Women</a>
+<a class="px-6 py-2 glass-panel-light text-text-primary rounded-full text-sm font-medium hover:bg-white/80 hover:text-primary transition-colors" href="#">Kids</a>
+<a class="px-6 py-2 glass-panel-light text-text-primary rounded-full text-sm font-medium hover:bg-white/80 hover:text-primary transition-colors" href="#">Accessories</a>
+<a class="px-6 py-2 glass-panel-light text-text-primary rounded-full text-sm font-medium hover:bg-white/80 hover:text-primary transition-colors" href="#">Beauty</a>
+<a class="px-6 py-2 bg-red-500/10 border border-red-500/20 text-red-600 rounded-full text-sm font-bold hover:bg-red-500/20 backdrop-blur-sm transition-colors" href="#">Sale</a>
+</div>
+</div>
+<header class="relative w-full h-[600px] lg:h-[750px] overflow-hidden group">
+<div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[2000ms] group-hover:scale-105" data-alt="High fashion model wearing trench coat walking street" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBcZe0BB5gqFA__OMCibc1kINQp2Dv_IdemuL3GSpsVZnZMR0W8nbaRTS5peyDSD7w3g7690TR69KooF8_0RvyjZOpOgg_zBesWYu9TfWUsoQucpsi3dqDsvHHyMM5A_rZj_2wHn0jrps8Lqv7Qjy8YFxBWJCWVrseww2K6bE7W3VJS0EQEe60ijCEuQznb22NrINo-IuQXa8VFHjTIBAllR72Lg5ccgoflId-lnaHKIXnCyag_CNF5vpqNX5xAWejHRo7ehtGusWk');">
+</div>
+<div class="absolute inset-0 bg-hero-overlay"></div>
+<div class="relative h-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-start">
+<span class="inline-block py-1 px-3 mb-6 border border-white/30 rounded-full text-white/90 text-xs font-bold tracking-widest uppercase backdrop-blur-md bg-white/5">
+                Fall / Winter 2024
+            </span>
+<h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.9] tracking-tighter mb-4 drop-shadow-2xl">
+                THE NEW <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-purple-200">COLLECTION</span>
+</h1>
+<p class="text-gray-200 text-lg md:text-xl max-w-md mb-10 font-medium leading-relaxed drop-shadow-md">
+                Discover the latest trends in high-end fashion. Elevate your wardrobe with our exclusive seasonal pieces.
+            </p>
+<div class="flex gap-4">
+<button class="bg-primary/90 hover:bg-[#b0935e] text-[#161513] px-10 py-4 rounded-full font-bold text-base tracking-wide transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(201,169,110,0.4)] backdrop-blur-sm">
+                    SHOP NOW
+                </button>
+<button class="glass-btn text-white px-10 py-4 rounded-full font-bold text-base tracking-wide transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                    VIEW LOOKBOOK
+                </button>
+</div>
+</div>
+</header>
+<section class="py-20 relative">
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<div class="flex items-center justify-between mb-10">
+<h2 class="text-3xl font-bold tracking-tight text-text-primary">Trending Now</h2>
+<div class="flex gap-2">
+<button class="p-2 rounded-full border border-gray-300 hover:border-primary hover:bg-primary hover:text-white transition-all bg-white/50 backdrop-blur-sm">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<button class="p-2 rounded-full border border-gray-300 hover:border-primary hover:bg-primary hover:text-white transition-all bg-white/50 backdrop-blur-sm">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+<div class="group cursor-pointer glass-panel-light p-3 rounded-2xl hover:shadow-lg hover:bg-white/70 transition-all duration-500">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100 mb-4">
+<img alt="Man in beige suit jacket" class="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500" data-alt="Man modeling beige luxury suit jacket" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF2HFmBmVPJEV7xMXeXlb35DpjtCgJGBlnokl1xTKXfOv7WREL9_WvkRxGo1GDJD7hVA5f2sNj2Lfzf4alUJ3TOv4fmg6Trzw5zk791HyvKwfHCcvyzKmUlaR4QeSYCh9ILbpXmz3A_2xqMBSXO-KBH0l7l43PQ6HIin-cAWui5opqXSQlJk734hW6jXuth-CPIx_GH2aYr_FpWFqFnfZJXNn2j7u7XMz9DKSNRGANJ73NMxlKFSZJYl9UkMXwVgAsj0C0nmDxbDw"/>
+<button class="absolute top-4 right-4 p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/40 text-text-primary hover:text-red-500 hover:bg-white/80 transition-all opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-300">
+<span class="material-symbols-outlined text-[20px] filled">favorite</span>
+</button>
+<div class="absolute bottom-4 left-4 right-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+<button class="w-full bg-white/90 backdrop-blur text-black font-bold py-3 rounded-lg shadow-lg hover:bg-primary hover:text-white transition-colors text-sm">
+                                ADD TO BAG
+                            </button>
+</div>
+</div>
+<div class="px-2 pb-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-base font-bold text-text-primary group-hover:text-primary transition-colors">Milanese Blazer</h3>
+<p class="text-sm text-text-secondary mt-1">Italian Wool Blend</p>
+</div>
+<p class="text-base font-bold text-text-primary">$595</p>
+</div>
+</div>
+</div>
+<div class="group cursor-pointer glass-panel-light p-3 rounded-2xl hover:shadow-lg hover:bg-white/70 transition-all duration-500">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100 mb-4">
+<img alt="Woman in luxury coat" class="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500" data-alt="Woman wearing long luxury winter coat" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCok2mY_l54rx-eUSg7BZ1WCN7vUKWxf_2DgzFopZtv5Nx3wmB82eqd2dSXW40qBabeTgdjk0d1zvjk_sdTehL3XEnQ9uXL6hvNpQVN9nGun9tBBS01CYn3wH37l1_Eg61nc7Tyux_DRc9qD7BzdTaJv_EkceBBemGZng2fF98F5XtV8vk-KWmhi4j2vdTXrhN1hjVDROIWlykKmNi7C1GracpGjOMHFbPpsf3noepiI9WFMzB8PVlewhkJfRGI39EkZzBxVnP0RzU"/>
+<div class="absolute top-4 left-4 bg-primary/90 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded shadow-sm">BESTSELLER</div>
+<button class="absolute top-4 right-4 p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/40 text-text-primary hover:text-red-500 hover:bg-white/80 transition-all opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-300">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+<div class="absolute bottom-4 left-4 right-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+<button class="w-full bg-white/90 backdrop-blur text-black font-bold py-3 rounded-lg shadow-lg hover:bg-primary hover:text-white transition-colors text-sm">
+                                ADD TO BAG
+                            </button>
+</div>
+</div>
+<div class="px-2 pb-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-base font-bold text-text-primary group-hover:text-primary transition-colors">Cashmere Overcoat</h3>
+<p class="text-sm text-text-secondary mt-1">Midnight Blue</p>
+</div>
+<p class="text-base font-bold text-text-primary">$1,200</p>
+</div>
+</div>
+</div>
+<div class="group cursor-pointer glass-panel-light p-3 rounded-2xl hover:shadow-lg hover:bg-white/70 transition-all duration-500">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100 mb-4">
+<img alt="Luxury black t-shirt" class="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500" data-alt="Minimalist black cotton t-shirt folded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBi_xti4ZnmfHUQn7HBTo4M8w7vWU8jhie0hzJE-JMqkJj88ejqbwvhS9LDznTCHJl9K_uXKaW-gnyU64dXz1v19v6a9D9KuoOAL6JCTei0a8-PJWfAnN41_MHNS5tEb3R7cncCW9jazWslsrjzbwfl0c4l3_qt_-0ubAWRaSffEvK5GmmFPljikjDWLpd9Xq16DKbOtW5Q5ZwSsISyQAVU9w1lwMqklQ1l9XqZPPuhW698tciY3IVbYIUfu1Rko_4rY5tDetE9mUk"/>
+<button class="absolute top-4 right-4 p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/40 text-text-primary hover:text-red-500 hover:bg-white/80 transition-all opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-300">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+<div class="absolute bottom-4 left-4 right-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+<button class="w-full bg-white/90 backdrop-blur text-black font-bold py-3 rounded-lg shadow-lg hover:bg-primary hover:text-white transition-colors text-sm">
+                                ADD TO BAG
+                            </button>
+</div>
+</div>
+<div class="px-2 pb-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-base font-bold text-text-primary group-hover:text-primary transition-colors">Essential Tee</h3>
+<p class="text-sm text-text-secondary mt-1">Organic Pima Cotton</p>
+</div>
+<p class="text-base font-bold text-text-primary">$85</p>
+</div>
+</div>
+</div>
+<div class="group cursor-pointer glass-panel-light p-3 rounded-2xl hover:shadow-lg hover:bg-white/70 transition-all duration-500">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100 mb-4">
+<img alt="White luxury sneakers" class="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500" data-alt="White leather luxury sneakers on grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZ4kCW74RUxG61s6FUofogc8GmyDfi8TLo4krj52DgWSeaoBNKSFoR97rWGzwo5TJXJToXv79JY6g8vhZuPJhlsDqyu6MFw2ZqnbndP9__GcmZ_CcN4gUg_Tt0yHN0J-Sw8bm6MhXF-3miY3r5RZ5GY50DrhDqDCnHHJ69-agq-IuhYz0f9kSgJuFBvNJk96gbKRZc-rL7iQdP2tuNp_AvcvtdwPBdjNdUkckhF9MHmpsPO5wI87O6vVr-vQ6P3v9HjbyB8KcsxSI"/>
+<button class="absolute top-4 right-4 p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/40 text-text-primary hover:text-red-500 hover:bg-white/80 transition-all opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-300">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+<div class="absolute bottom-4 left-4 right-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+<button class="w-full bg-white/90 backdrop-blur text-black font-bold py-3 rounded-lg shadow-lg hover:bg-primary hover:text-white transition-colors text-sm">
+                                ADD TO BAG
+                            </button>
+</div>
+</div>
+<div class="px-2 pb-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-base font-bold text-text-primary group-hover:text-primary transition-colors">Urban Trainer</h3>
+<p class="text-sm text-text-secondary mt-1">Full Grain Leather</p>
+</div>
+<p class="text-base font-bold text-text-primary">$450</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-20 relative text-white overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#1a1520] to-[#0f172a] z-0"></div>
+<div class="absolute inset-0 bg-mesh-dark opacity-60 z-0"></div>
+<div class="orb w-96 h-96 bg-purple-600/20 top-0 right-0 z-0"></div>
+<div class="orb w-64 h-64 bg-teal-600/20 bottom-0 left-0 z-0"></div>
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<div class="flex items-center justify-between mb-10">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-white drop-shadow-lg">Just Dropped</h2>
+<p class="text-gray-300 mt-2 font-light">Exclusive limited edition pieces.</p>
+</div>
+<a class="text-primary hover:text-white transition-colors font-bold text-sm flex items-center gap-1" href="#">
+                    VIEW ALL <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-2 relative h-[500px] rounded-2xl overflow-hidden group shadow-2xl border border-white/10">
+<img alt="Model posing in street wear" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Close up portrait of model in urban setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJBOvBkygtXsQbTe8TffsiFPdYztgDPF-wHNUD9j5O2UQquTQAog5qmWoMi1n2LHVP-QVlrRUpACYsNeCjw3_znCAch_GicZnv1k_VOb86aZpPA82myd1MBkwze92UF6grFX8Y1dyd4ZOXoZrahtTGfKbzzchwd3Y1_SSSbQc6g69YiHEpU7meQvprlI5gcJeNPOd4Oj2KP6XT4_JWgF1hTn2kbgOQInWHmMkfjNpwYUpqfv9g1xH9e0KBM7qFdUxKFnEj6Bv0FBs"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-8">
+<h3 class="text-3xl font-bold mb-2 text-white">The Urban Series</h3>
+<p class="text-gray-200 mb-6 max-w-md font-medium">Designed for the modern metropolitan lifestyle. Comfort meets uncompromising style.</p>
+<button class="w-fit px-6 py-3 bg-white/10 backdrop-blur-md border border-white/30 text-white font-bold rounded-full hover:bg-primary hover:border-primary hover:text-black transition-all shadow-lg">
+                            EXPLORE COLLECTION
+                        </button>
+</div>
+</div>
+<div class="flex flex-col gap-8 h-[500px]">
+<div class="flex-1 glass-panel bg-white/5 rounded-2xl p-6 flex items-center gap-4 group cursor-pointer hover:bg-white/10 transition-colors">
+<div class="w-24 h-24 bg-gray-800 rounded-xl overflow-hidden shrink-0 shadow-inner">
+<img alt="Watch" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" data-alt="Black luxury chronograph watch" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvJ546BubaRETVWG5apnW5NTkEi1P4d01JHjVYCUEMnbN-qd9HDO4eGMHmEzJnFsOO98O4U-DgQZfUOle757_1_uOD_dVkiulACAyVVbIVM9R0HZzEpKWpHLSITMvN-6Lv8KrBfS1-EvIrBSWAZ7xz07EmhEjpyLCx6GwuEfUTQrvxTsKNd6Lbq9UvQwHM9WyrC-nfPpnJRpo-ut9wkmzk-wjuPHRdt8Bzbtwhh4SnVXlbnRFoSj1IERpyK9D2dbeQ_bd0kC_jWWI"/>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-1 group-hover:text-primary transition-colors text-white">Onyx Chrono</h4>
+<p class="text-sm text-gray-400 mb-2">Limited Edition</p>
+<span class="text-primary font-bold">$2,450</span>
+</div>
+</div>
+<div class="flex-1 glass-panel bg-white/5 rounded-2xl p-6 flex items-center gap-4 group cursor-pointer hover:bg-white/10 transition-colors">
+<div class="w-24 h-24 bg-gray-800 rounded-xl overflow-hidden shrink-0 shadow-inner">
+<img alt="Bag" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" data-alt="Black leather handbag on dark surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLV_cGms0LCpJu7pkngPNIytLeXbbcIxb5ANstK_Pm7nG4quAN7eh7Dat87ccHMtKJrR8HNSgJZn1iZi09Ni5ipL9vq6pqObjQUDvNmBbFBBFHw7Rvy3214xzD4HY9P2mgHNxyYTFp7iUR-0DKxHUE6B3vNEQPo0iEO6OWGfqdWRn1Ymr9dpbg8XeTE8bE0VpkvxHEXKvhOwELPnBawazKC_3mBPmfN51keP-M_L5suvnm532xlLZRGMB6PBaCLbMaq6vzqDDtLqU"/>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-1 group-hover:text-primary transition-colors text-white">Signature Tote</h4>
+<p class="text-sm text-gray-400 mb-2">Italian Leather</p>
+<span class="text-primary font-bold">$895</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 relative overflow-hidden">
+<div class="absolute inset-0 bg-mesh-light opacity-50 -z-10"></div>
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<div class="grid md:grid-cols-2 gap-16 items-center">
+<div class="order-2 md:order-1">
+<span class="text-primary font-bold tracking-widest text-sm uppercase mb-4 block">Our Philosophy</span>
+<h2 class="text-4xl md:text-5xl font-black text-text-primary mb-6 leading-tight">
+                        Sustainable Luxury <br/> for the Future.
+                    </h2>
+<div class="glass-panel-light p-6 rounded-2xl mb-8">
+<p class="text-text-secondary text-lg leading-relaxed">
+                            We believe that true luxury lies in longevity. Every piece in our collection is crafted with meticulous attention to detail, using ethically sourced materials that stand the test of time.
+                        </p>
+</div>
+<div class="flex gap-8">
+<div class="glass-panel-light p-4 rounded-xl text-center min-w-[100px]">
+<h4 class="text-3xl font-black text-text-primary mb-1">100%</h4>
+<p class="text-xs text-text-secondary font-bold uppercase">Organic</p>
+</div>
+<div class="glass-panel-light p-4 rounded-xl text-center min-w-[100px]">
+<h4 class="text-3xl font-black text-text-primary mb-1">Zero</h4>
+<p class="text-xs text-text-secondary font-bold uppercase">Carbon</p>
+</div>
+<div class="glass-panel-light p-4 rounded-xl text-center min-w-[100px]">
+<h4 class="text-3xl font-black text-text-primary mb-1">20+</h4>
+<p class="text-xs text-text-secondary font-bold uppercase">Awards</p>
+</div>
+</div>
+</div>
+<div class="order-1 md:order-2 relative">
+<div class="aspect-square rounded-full overflow-hidden border-8 border-white/50 shadow-2xl relative z-10 ring-4 ring-primary/20">
+<img alt="Editorial Model" class="w-full h-full object-cover" data-alt="Portrait of woman with artistic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyM6mCqTm7fIC-wZ_eryyVX0zXbTQEgBTJs-M4YoErREZ4keo5xtfwYIRBW9Wuh4s6W5gKWhpYJPWroG498EU2wAl6WaqQU1nim9Ey3URdbZ02NG-IpBUasAx9TGkPdahEyQTlcRyMYMGu5zhB1JNT3j19HW7pePZpG2XeP_4Nl-E3iME3XsRXJNqzq8aLw0u8aPjAMGUx0Wys36zXxFRZGVU-ltor118nUi1Hglj-pCrOEej7oWjN6qGIvi9BowEXKLAmRrfRMB0"/>
+</div>
+<div class="absolute -bottom-6 -right-6 w-48 h-48 bg-primary/30 rounded-full blur-3xl animate-pulse"></div>
+<div class="absolute -top-6 -left-6 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl"></div>
+</div>
+</div>
+</div>
+</section>
+<footer class="bg-[#101015] text-white pt-20 pb-10 border-t border-white/10 relative overflow-hidden">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+<div class="orb w-full h-64 bg-primary/5 bottom-0 left-0 blur-3xl"></div>
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+<div class="lg:col-span-2">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-3xl text-primary">diamond</span>
+<h2 class="text-2xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">SarvaHub</h2>
+</div>
+<p class="text-gray-400 mb-8 max-w-sm leading-relaxed">
+                        Redefining modern luxury through sustainable practices and timeless design. Join our exclusive community.
+                    </p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-black hover:border-primary transition-all backdrop-blur-sm" href="#">
+<span class="font-bold text-xs">FB</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-black hover:border-primary transition-all backdrop-blur-sm" href="#">
+<span class="font-bold text-xs">IG</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-black hover:border-primary transition-all backdrop-blur-sm" href="#">
+<span class="font-bold text-xs">X</span>
+</a>
+</div>
+</div>
+<div>
+<h4 class="text-lg font-bold mb-6 text-white/90">Shop</h4>
+<ul class="space-y-4 text-gray-400">
+<li><a class="hover:text-primary transition-colors" href="#">New Arrivals</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Men</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Women</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Accessories</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Gift Cards</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-lg font-bold mb-6 text-white/90">Help</h4>
+<ul class="space-y-4 text-gray-400">
+<li><a class="hover:text-primary transition-colors" href="#">Customer Service</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">My Account</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Find a Store</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Legal &amp; Privacy</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Contact</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-lg font-bold mb-6 text-white/90">About</h4>
+<ul class="space-y-4 text-gray-400">
+<li><a class="hover:text-primary transition-colors" href="#">Our Story</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Sustainability</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Careers</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Press</a></li>
+</ul>
+</div>
+</div>
+<div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-gray-500 text-sm">© 2024 SarvaHub Inc. All rights reserved.</p>
+<div class="flex gap-6 text-sm text-gray-500">
+<a class="hover:text-white transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-white transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-white transition-colors" href="#">Cookies Settings</a>
+</div>
+</div>
+</div>
+</footer>
+
+</body></html>

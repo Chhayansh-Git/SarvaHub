@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SarvaHub Glassmorphism Cart Drawer</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#c9a96e",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#1e1a14",
+                        "surface-dark": "#2a2721",
+                        "surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    animation: {
+                        'gradient-xy': 'gradient-xy 15s ease infinite',
+                        'slide-in-right': 'slide-in-right 0.5s ease-out forwards',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'gradient-xy': {
+                            '0%, 100%': {
+                                'background-size': '400% 400%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            }
+                        },
+                        'slide-in-right': {
+                            '0%': { transform: 'translateX(20px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        'shimmer': {
+                            '0%': { backgroundPosition: '-1000px 0' },
+                            '100%': { backgroundPosition: '1000px 0' }
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: '1', boxShadow: '0 0 0 0px rgba(201, 169, 110, 0.7)' },
+                            '50%': { opacity: '.9', boxShadow: '0 0 0 10px rgba(201, 169, 110, 0)' }
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .glass-border {
+                @apply border border-white/20 dark:border-white/10;
+            }
+            .glass-panel {
+                @apply bg-white/70 dark:bg-black/60 backdrop-blur-2xl;
+            }
+            .stagger-1 { animation-delay: 100ms; }
+            .stagger-2 { animation-delay: 200ms; }
+            .stagger-3 { animation-delay: 300ms; }.glass-scroll::-webkit-scrollbar {
+                width: 6px;
+            }
+            .glass-scroll::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .glass-scroll::-webkit-scrollbar-thumb {
+                background-color: rgba(156, 163, 175, 0.3);
+                border-radius: 20px;
+            }
+            .glass-scroll::-webkit-scrollbar-thumb:hover {
+                background-color: rgba(156, 163, 175, 0.5);
+            }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-hidden h-screen flex flex-col">
+<div class="fixed inset-0 z-0 opacity-20 dark:opacity-30 pointer-events-none">
+<div class="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-900 animate-gradient-xy mix-blend-multiply dark:mix-blend-screen"></div>
+<div class="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent animate-spin-slow"></div>
+</div>
+<div class="flex-1 flex flex-col relative transition-all duration-300 pointer-events-none select-none filter blur-sm opacity-40 z-10">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-[#35322c] px-10 py-4 bg-background-light/80 dark:bg-[#161513]/80 backdrop-blur-md">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 dark:text-white text-slate-900">
+<div class="size-6">
+<svg class="text-primary" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-lg font-extrabold leading-tight tracking-[-0.015em]">SarvaHub</h2>
+</div>
+<nav class="flex items-center gap-9 hidden md:flex">
+<a class="text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">New Arrivals</a>
+<a class="text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Shop</a>
+<a class="text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Collections</a>
+<a class="text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Editorial</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<button class="p-2 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">light_mode</span>
+</button>
+<div class="hidden lg:flex w-64 items-center bg-slate-100 dark:bg-[#35322c] rounded-lg px-3 py-2">
+<span class="material-symbols-outlined text-slate-400 text-xl">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full ml-2 text-slate-900 dark:text-white placeholder-slate-400" placeholder="Search" type="text"/>
+</div>
+<div class="flex gap-4">
+<button class="relative">
+<span class="material-symbols-outlined text-2xl">shopping_cart</span>
+<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">3</span>
+</button>
+<button>
+<span class="material-symbols-outlined text-2xl">person</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+<div class="aspect-[3/4] bg-slate-200 dark:bg-surface-dark rounded-xl animate-pulse"></div>
+<div class="aspect-[3/4] bg-slate-200 dark:bg-surface-dark rounded-xl animate-pulse"></div>
+<div class="aspect-[3/4] bg-slate-200 dark:bg-surface-dark rounded-xl animate-pulse"></div>
+<div class="aspect-[3/4] bg-slate-200 dark:bg-surface-dark rounded-xl animate-pulse"></div>
+</main>
+</div>
+<div class="fixed inset-0 z-50 flex justify-end">
+<div class="absolute inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity"></div>
+<div class="relative w-full max-w-[420px] h-full flex flex-col shadow-2xl z-10 overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-b from-white/80 to-white/60 dark:from-slate-900/80 dark:to-slate-900/70 backdrop-blur-2xl border-l border-white/20 shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:shadow-[0_0_40px_rgba(255,255,255,0.05)]"></div>
+<div class="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-primary/50 to-transparent"></div>
+<div class="relative h-full flex flex-col z-20">
+<div class="flex items-center justify-between px-6 py-5 border-b border-white/10 dark:border-white/5 bg-white/10 dark:bg-white/5 backdrop-blur-md">
+<h3 class="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">Your Bag <span class="text-primary text-lg font-medium">(3)</span></h3>
+<button class="p-2 -mr-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors rounded-full hover:bg-white/20 dark:hover:bg-white/10 group">
+<span class="material-symbols-outlined group-hover:rotate-90 transition-transform duration-300">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto px-6 py-4 space-y-6 glass-scroll">
+<div class="flex gap-4 group animate-slide-in-right stagger-1 opacity-0 fill-mode-forwards">
+<div class="relative h-28 w-24 flex-shrink-0 overflow-hidden rounded-lg border border-white/20 shadow-sm">
+<img alt="Silk Slip Dress in champagne color" class="h-full w-full object-cover object-center transform group-hover:scale-105 transition-transform duration-500" data-alt="Silk slip dress texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB49J-pZkrFxqcJZY308fb2Agjy4XafFL3gzZeRV2Ofir6LffguIR4OhEm-nlI9I8Pli1fQnOaGzh4C4PEPmuabALqjvzoueRu6hkiWv-XUZ6MwDPM_drOT0Bx5i9bj9-O3opue2rFYxUMvkpo8QqiB1eT7LhWZ6YAGEkbpOm02YWmBOuObmA9k8MFis2nyu80SqLwwndSEdYQjKShynQ3ce7PiWwj5P8k5qzSePVX4IxiGGoUOc-vSnLd8D8qBJ0X5YAfoqKirteo"/>
+</div>
+<div class="flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-base text-slate-900 dark:text-white truncate pr-4">Silk Slip Dress</h4>
+<p class="font-bold text-base text-slate-900 dark:text-white">$198.00</p>
+</div>
+<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Champagne / S</p>
+</div>
+<div class="flex items-center justify-between mt-4">
+<div class="flex items-center rounded-full border border-white/30 dark:border-white/10 bg-white/20 dark:bg-black/20 shadow-inner backdrop-blur-sm">
+<button class="p-1 px-3 text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm font-bold">remove</span>
+</button>
+<span class="w-4 text-center text-sm font-medium">1</span>
+<button class="p-1 px-3 text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm font-bold">add</span>
+</button>
+</div>
+<button class="text-xs font-medium text-red-500 hover:text-red-400 underline underline-offset-2 opacity-60 hover:opacity-100 transition-opacity">Remove</button>
+</div>
+</div>
+</div>
+<div class="flex gap-4 group animate-slide-in-right stagger-2 opacity-0 fill-mode-forwards">
+<div class="relative h-28 w-24 flex-shrink-0 overflow-hidden rounded-lg border border-white/20 shadow-sm">
+<img alt="Cashmere Scarf in charcoal color" class="h-full w-full object-cover object-center transform group-hover:scale-105 transition-transform duration-500" data-alt="Soft cashmere texture grey" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCW9QrW9ARgtXNWycO3ux7bIitncTwVfP6o-dujGymfWnpjVWDr2c5V40zvQARnHIPdu6R5IEa8SkNBHYKb5X5VrRNdxVk5U1JNRyEhtkaM728vHfCdyGkRuy5aif7y2sSBeqxytMglpVSf2zhlDON7mJxilKgLVBIEWzaZlRpo0eSC_Z-1zbrUYdK_BPFBh9g7fvx_3yWgOgjTNOndokPHv2QJGxKDsQVjbzuSR8MPJKqsAHStyDXf4vkxvl4wGK9QKZ-HbUjtiUo"/>
+</div>
+<div class="flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-base text-slate-900 dark:text-white truncate pr-4">Cashmere Scarf</h4>
+<p class="font-bold text-base text-slate-900 dark:text-white">$145.00</p>
+</div>
+<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Charcoal / One Size</p>
+</div>
+<div class="flex items-center justify-between mt-4">
+<div class="flex items-center rounded-full border border-white/30 dark:border-white/10 bg-white/20 dark:bg-black/20 shadow-inner backdrop-blur-sm">
+<button class="p-1 px-3 text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm font-bold">remove</span>
+</button>
+<span class="w-4 text-center text-sm font-medium">1</span>
+<button class="p-1 px-3 text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm font-bold">add</span>
+</button>
+</div>
+<button class="text-xs font-medium text-red-500 hover:text-red-400 underline underline-offset-2 opacity-60 hover:opacity-100 transition-opacity">Remove</button>
+</div>
+</div>
+</div>
+<div class="flex gap-4 group animate-slide-in-right stagger-3 opacity-0 fill-mode-forwards">
+<div class="relative h-28 w-24 flex-shrink-0 overflow-hidden rounded-lg border border-white/20 shadow-sm">
+<img alt="Leather Belt with gold buckle" class="h-full w-full object-cover object-center transform group-hover:scale-105 transition-transform duration-500" data-alt="Black leather texture close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-T5No5L_kQRq0XLTllKv6GNFXv2fjaIowJs3u52isr1u9t2h3iGjnvUzGTOv7aIEW0FX2NI2mfCdTxdHYDFATxv4Q7dt3Xr81qz0yMNhp1Hu6eNvh9HHpnHSQoHuzTGTl9ibNAYif0UVcWc7Ui7yPfznR-7BmoG9qRFK_MHQtrRsmqRbMqCbHfFJpDuw44s0zLJkPJ1_4O6op3mIABx27Ws-OXm63F12iIMTP27TEgTkPA_voTVLfAAQuZNbs4lC5gEsVTauaLxA"/>
+</div>
+<div class="flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-base text-slate-900 dark:text-white truncate pr-4">Classic Leather Belt</h4>
+<p class="font-bold text-base text-slate-900 dark:text-white">$124.97</p>
+</div>
+<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Black / M</p>
+</div>
+<div class="flex items-center justify-between mt-4">
+<div class="flex items-center rounded-full border border-white/30 dark:border-white/10 bg-white/20 dark:bg-black/20 shadow-inner backdrop-blur-sm">
+<button class="p-1 px-3 text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm font-bold">remove</span>
+</button>
+<span class="w-4 text-center text-sm font-medium">1</span>
+<button class="p-1 px-3 text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm font-bold">add</span>
+</button>
+</div>
+<button class="text-xs font-medium text-red-500 hover:text-red-400 underline underline-offset-2 opacity-60 hover:opacity-100 transition-opacity">Remove</button>
+</div>
+</div>
+</div>
+</div>
+<div class="border-t border-white/10 dark:border-white/5 p-6 bg-white/30 dark:bg-black/30 backdrop-blur-lg">
+<div class="space-y-3 mb-6">
+<div class="flex justify-between text-sm text-slate-600 dark:text-slate-300">
+<span>Subtotal</span>
+<span>$467.97</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-slate-600 dark:text-slate-300">Shipping</span>
+<span class="text-green-600 dark:text-green-400 font-medium">FREE</span>
+</div>
+<div class="pt-3 border-t border-slate-200/50 dark:border-white/10 flex justify-between items-center">
+<span class="text-base font-bold text-slate-900 dark:text-white">Total</span>
+<span class="text-xl font-bold text-slate-900 dark:text-white">$467.97</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Taxes and duties calculated at checkout.</p>
+</div>
+<div class="flex flex-col gap-3">
+<button class="relative w-full overflow-hidden bg-primary text-white font-bold py-3.5 px-4 rounded-lg shadow-[0_0_15px_rgba(201,169,110,0.4)] group hover:shadow-[0_0_25px_rgba(201,169,110,0.6)] transition-all duration-300 animate-pulse-glow">
+<div class="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg]"></div>
+<div class="relative flex items-center justify-center gap-2">
+                            Proceed to Checkout
+                            <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</button>
+<button class="w-full text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-white transition-colors py-2 opacity-80 hover:opacity-100">
+                        Continue Shopping
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>
