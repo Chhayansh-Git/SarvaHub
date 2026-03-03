@@ -191,10 +191,10 @@ export default function SellerOnboarding() {
                                         <input type="text" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="John Doe" value={formData.founderName} onChange={(e) => setFormData({ ...formData, founderName: e.target.value })} />
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
+                         <div className="mt-8 pt-8 border-t border-border/50 flex items-center justify-between">
+                            <button onClick={prevStep} disabled={step === 1} className={`px-6 py-3 font-semibold rounded-xl transition-all ${step === 1 ? 'opacity-0 pointer-events-none' : 'glass-panel hover:bg-muted text-foreground'}`}>Back</button>
+
                                             <label className="text-sm font-semibold">Business Email</label>
-                                            <input type="email" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="contact@company.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                                        </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-semibold">Phone</label>
                                             <input type="tel" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="+91 98765 43210" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
