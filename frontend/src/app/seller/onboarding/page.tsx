@@ -34,6 +34,48 @@ export default function SellerOnboarding() {
     const nextStep = () => setStep((prev) => Math.min(prev + 1, 5));
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "business" | "kyc") => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const isBusiness = type === "business";
+        isBusiness ? setUploadingDoc(true) : setUploadingKyc(true);
+        try {
+            const fileData = new FormData();
+            fileData.append("file", file);
+            fileData.append("folder", "kyc");
+            const res = await api.post("/upload", fileData, {
+                headers: {"Content-Type": "multipart/form-data"}
+            });
+        } catch {
+        }
+    };
+
+    const uploadDirect = async (file: File, type: "business" | "kyc") => {
+        const isBusiness = type === "business";
+        isBusiness ? setUploadingDoc(true) : setUploadingKyc(true);
+        try {
+            const fileData = new FormData();
+            fileData.append("file", file);
+            fileData.append("folder", "kyc");
+            const token = document.cookie.split("; ").find(row => row.startsWith("token="))?.split("=")[1] || "";
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+            const res = await fetch(`${API_URL}/upload`, {
+                method: "POST",
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: fileData
+            });
+            const data = await res.json();
+            if (data.url) {
+                if (isBusiness) setFormData({...formData, businessDocUrl: data.url});
+                else setFormData({...formData, kycDocUrl: data.url});
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            isBusiness ? setUploadingDoc(false) : setUploadingKyc(false);
+        }
+    };
+
     const handleSubmit = async () => {
         setSubmitting(true);
         try {
@@ -166,57 +208,6 @@ export default function SellerOnboarding() {
                             </div>
                         )}
 
-                        const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'business' | 'kyc') => {
-        const file = e.target.files?.[0];
-                            if (!file) return;
-
-                            const isBusiness = type === 'business';
-                            isBusiness ? setUploadingDoc(true) : setUploadingKyc(true);
-
-                            try {
-            const fileData = new FormData();
-                            fileData.append('file', file);
-                            fileData.append('folder', 'kyc');
-
-                            const res = await api.post('/upload', fileData, {
-                                headers: {'Content-Type': 'multipart/form-data' } // Our api client might strictly stringify otherwise if not handled correctly natively, but let's assume valid formdata support globally via interceptors or manually manage it. Our api.ts actually sends JSON natively, so we fetch directly
-            });
-            // Let's use fetch directly for FormData to bypass json stringification!
-        } catch {
-                                // Ignored temporarily
-                            }
-    };
-
-    // Fallback direct upload bypass since `api.ts` expects JSON
-    const uploadDirect = async (file: File, type: 'business' | 'kyc') => {
-        const isBusiness = type === 'business';
-                            isBusiness ? setUploadingDoc(true) : setUploadingKyc(true);
-
-                            try {
-            const fileData = new FormData();
-                            fileData.append('file', file);
-                            fileData.append('folder', 'kyc');
-            
-            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
-                            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
-
-                            const res = await fetch(`${API_URL}/upload`, {
-                                method: 'POST',
-                            headers: {
-                                ...(token ? { Authorization: `Bearer ${token}` } : {})
-                            },
-                            body: fileData
-            });
-
-                            const data = await res.json();
-                            if (data.url) {
-                if (isBusiness) setFormData({...formData, businessDocUrl: data.url});
-                            else setFormData({...formData, kycDocUrl: data.url});
-            }
-        } catch (error) {
-                                console.error(error);
-        } finally {
-                                isBusiness ? setUploadingDoc(false) : setUploadingKyc(false);
         }
     }
 
