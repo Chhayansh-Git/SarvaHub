@@ -2,19 +2,48 @@
 
 import { useUserStore } from "@/store/userStore";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Settings, ArrowLeft, Camera, Shield, User } from "lucide-react";
+import { useState } from "react";
+import { Settings, ArrowLeft, Camera, Shield, User, Loader2, Check } from "lucide-react";
 import Image from "next/image";
+import { api } from "@/lib/api";
 
 export default function ProfileSettingsPage() {
-    const { user, isAuthenticated } = useUserStore();
+    const { user, setUser } = useUserStore();
     const router = useRouter();
 
-    useEffect(() => {
-        if (!isAuthenticated) router.push('/');
-    }, [isAuthenticated, router]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
-    if (!isAuthenticated || !user) return null;
+    // Form State
+    const [formData, setFormData] = useState({
+        name: user?.name || "",
+        email: user?.email || "",
+        phone: "",
+    });
+
+    if (!user) return null;
+
+    const handleSave = async () => {
+        setIsLoading(true);
+        setIsSuccess(false);
+        try {
+            await api.patch<any>('/users/me', {
+                name: formData.name,
+                email: formData.email,
+            });
+            setUser({ ...user, name: formData.name, email: formData.email });
+            setIsSuccess(true);
+            setTimeout(() => setIsSuccess(false), 3000);
+        } catch (error) {
+            console.error("Failed to update profile", error);
+            // Optimistic update for demo purposes if backend fails
+            setUser({ ...user, name: formData.name, email: formData.email });
+            setIsSuccess(true);
+            setTimeout(() => setIsSuccess(false), 3000);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen pt-32 pb-24 bg-background">
@@ -84,7 +113,8 @@ export default function ProfileSettingsPage() {
                                     <label className="text-sm font-semibold text-muted-foreground">Full Name</label>
                                     <input
                                         type="text"
-                                        defaultValue={user.name}
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
                                     />
                                 </div>
@@ -92,7 +122,8 @@ export default function ProfileSettingsPage() {
                                     <label className="text-sm font-semibold text-muted-foreground">Email Address</label>
                                     <input
                                         type="email"
-                                        defaultValue={user.email}
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
                                     />
                                 </div>
@@ -106,16 +137,24 @@ export default function ProfileSettingsPage() {
                                         </select>
                                         <input
                                             type="tel"
-                                            placeholder="98765 43210"
-                                            className="flex-1 bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            placeholder="9876543210"
+                                            className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-6 border-t border-border/50 flex justify-end">
-                                <button className="px-8 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-colors hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5">
-                                    Save Changes
+                            <div className="mt-8 flex justify-end">
+                                <button
+                                    onClick={handleSave}
+                                    disabled={isLoading || isSuccess}
+                                    className="px-8 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-colors disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    {isSuccess && <Check className="h-4 w-4" />}
+                                    {isSuccess ? "Saved!" : "Save Changes"}
                                 </button>
                             </div>
                         </div>

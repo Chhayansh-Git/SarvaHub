@@ -1,42 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useUserStore } from "@/store/userStore";
+import { useCartStore } from "@/store/cartStore";
 import { useRouter } from "next/navigation";
-
-// Dummy context state. In reality, this would use Zustand/Context.
-interface CartItem {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    image: string;
-    attributes?: string;
-}
-
-const DUMMY_ITEMS: CartItem[] = [
-    {
-        id: "1",
-        name: "Chronograph Automatic 42mm",
-        price: 205800,
-        quantity: 1,
-        image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=200&q=80",
-        attributes: "Rose Gold • Steel Band"
-    },
-    {
-        id: "2",
-        name: "Aetherius Obsidian Ring",
-        price: 74760,
-        quantity: 2,
-        image: "https://images.unsplash.com/photo-1605100804763-247f673f224e?w=200&q=80",
-        attributes: "Size 8 • Matte Finish"
-    }
-];
 
 interface CartDrawerProps {
     isOpen: boolean;
@@ -44,10 +15,17 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
-    const [items, setItems] = useState<CartItem[]>(DUMMY_ITEMS);
     const { theme } = useTheme();
     const router = useRouter();
     const { isAuthenticated, openAuthModal } = useUserStore();
+    const { items, subtotal, itemCount, isLoading, updateQuantity, removeItem, fetchCart } = useCartStore();
+
+    // Sync cart from server when drawer opens and user is authenticated
+    useEffect(() => {
+        if (isOpen && isAuthenticated) {
+            fetchCart();
+        }
+    }, [isOpen, isAuthenticated, fetchCart]);
 
     const handleCheckout = () => {
         if (!isAuthenticated) {
@@ -58,23 +36,6 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         onClose();
         router.push("/checkout");
     };
-
-    const updateQuantity = (id: string, delta: number) => {
-        setItems(items.map(item => {
-            if (item.id === id) {
-                const newQuantity = Math.max(1, item.quantity + delta);
-                return { ...item, quantity: newQuantity };
-            }
-            return item;
-        }));
-    };
-
-    const removeItem = (id: string) => {
-        setItems(items.filter(item => item.id !== id));
-    };
-
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
         <AnimatePresence>
@@ -103,7 +64,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 <ShoppingBag className="h-5 w-5" />
                                 <h2 className="text-xl font-heading font-black">Your Bag</h2>
                                 <span className="bg-accent text-accent-foreground text-xs font-bold px-2.5 py-0.5 rounded-full">
-                                    {totalItems}
+                                    {itemCount}
                                 </span>
                             </div>
                             <button
@@ -116,7 +77,12 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                         {/* Cart Items */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                            {items.length === 0 ? (
+                            {isLoading ? (
+                                <div className="h-full flex flex-col items-center justify-center text-center opacity-70">
+                                    <div className="h-16 w-16 mb-4 rounded-full border-4 border-muted border-t-accent animate-spin" />
+                                    <p className="text-sm text-muted-foreground">Loading your bag...</p>
+                                </div>
+                            ) : items.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center opacity-70">
                                     <ShoppingBag className="h-16 w-16 mb-4 text-muted-foreground" />
                                     <h3 className="text-lg font-bold mb-2">Your bag is empty</h3>
@@ -127,7 +93,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                     <div key={item.id} className="flex gap-4">
                                         {/* Image */}
                                         <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-border shrink-0 bg-muted">
-                                            <Image src={item.image} alt={item.name} fill className="object-cover" />
+                                            <Image src={item.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&q=80'} alt={item.name} fill className="object-cover" />
                                         </div>
 
                                         {/* Details */}
@@ -147,11 +113,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                             <div className="flex items-center justify-between mt-4">
                                                 {/* Quantity Stepper */}
                                                 <div className="flex items-center gap-3 bg-muted/50 rounded-full px-2 py-1 border border-border">
-                                                    <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:text-accent disabled:opacity-50" disabled={item.quantity <= 1}>
+                                                    <button onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))} className="p-1 hover:text-accent disabled:opacity-50" disabled={item.quantity <= 1}>
                                                         <Minus className="h-3.5 w-3.5" />
                                                     </button>
                                                     <span className="text-sm font-semibold w-4 text-center">{item.quantity}</span>
-                                                    <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:text-accent">
+                                                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:text-accent">
                                                         <Plus className="h-3.5 w-3.5" />
                                                     </button>
                                                 </div>

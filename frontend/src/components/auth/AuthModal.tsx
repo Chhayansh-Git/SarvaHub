@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, ShieldCheck } from 'lucide-react';
 import { useUserStore } from '@/store/userStore';
+import { api } from '@/lib/api';
 
 export function AuthModal() {
     const { isAuthModalOpen, authModalType, closeAuthModal, openAuthModal, login } = useUserStore();
@@ -14,25 +15,46 @@ export function AuthModal() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const [error, setError] = useState('');
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setError('');
 
-        // Simulate API call for login/register
-        setTimeout(() => {
-            login(
-                {
-                    id: 'usr_' + Math.random().toString(36).substr(2, 9),
-                    name: authModalType === 'register' ? name : 'Guest User',
-                    email: email,
-                    role: 'consumer' // Default to consumer for this flow
-                },
-                'mock_jwt_token_12345'
-            );
-            setIsLoading(false);
+        try {
+            const endpoint = authModalType === 'login' ? '/auth/login' : '/auth/register';
+            const body: Record<string, unknown> = { email, password };
+            if (authModalType === 'register') {
+                body.name = name;
+                body.role = 'consumer';
+            }
+
+            const data = await api.post<{
+                user: { id: string; name: string; email: string; role: 'consumer' | 'seller' | 'admin'; avatar?: string };
+                accessToken: string;
+            }>(endpoint, body);
+
+            login(data.user, data.accessToken);
+
+            // Sync cart after login
+            try {
+                const { useCartStore } = await import('@/store/cartStore');
+                useCartStore.getState().fetchCart();
+            } catch { /* cart sync is non-critical */ }
+
+            // Reset form
+            setName('');
+            setEmail('');
+            setPassword('');
             closeAuthModal();
-        }, 1200);
+        } catch (err: any) {
+            setError(err?.message || 'Something went wrong. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
+
 
     if (!isAuthModalOpen) return null;
 
@@ -77,6 +99,12 @@ export function AuthModal() {
                                     : 'Join SarvaHub to access premium luxury collections'}
                             </p>
                         </div>
+
+                        {error && (
+                            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium text-center">
+                                {error}
+                            </div>
+                        )}
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {authModalType === 'register' && (

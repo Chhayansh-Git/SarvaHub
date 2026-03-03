@@ -11,13 +11,7 @@ export default function AccountDashboard() {
     const { user, isAuthenticated, logout } = useUserStore();
     const router = useRouter();
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/');
-        }
-    }, [isAuthenticated, router]);
-
-    if (!isAuthenticated || !user) return null;
+    if (!user) return null;
 
     const handleLogout = () => {
         logout();

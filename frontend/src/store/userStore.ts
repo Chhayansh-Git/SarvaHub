@@ -19,13 +19,14 @@ interface AuthState {
     // Actions
     login: (user: User, token: string) => void;
     logout: () => void;
+    setUser: (user: Partial<User>) => void;
     openAuthModal: (type?: 'login' | 'register') => void;
     closeAuthModal: () => void;
 }
 
 export const useUserStore = create<AuthState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             user: null,
             accessToken: null,
             isAuthenticated: false,
@@ -39,11 +40,33 @@ export const useUserStore = create<AuthState>()(
                 isAuthModalOpen: false
             }),
 
-            logout: () => set({
-                user: null,
-                accessToken: null,
-                isAuthenticated: false
-            }),
+            logout: () => {
+                // Fire-and-forget API call
+                const token = get().accessToken;
+                if (token) {
+                    fetch('/api/v1/auth/logout', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        credentials: 'include',
+                    }).catch(() => { /* ignore */ });
+                }
+
+                // Clear cart store
+                try {
+                    // Dynamic import to avoid circular dependency
+                    import('@/store/cartStore').then(m => m.useCartStore.getState().clearCart());
+                } catch { /* ignore */ }
+
+                set({
+                    user: null,
+                    accessToken: null,
+                    isAuthenticated: false
+                });
+            },
+
+            setUser: (updates) => set((state) => ({
+                user: state.user ? { ...state.user, ...updates } : null,
+            })),
 
             openAuthModal: (type = 'login') => set({
                 isAuthModalOpen: true,
@@ -60,7 +83,7 @@ export const useUserStore = create<AuthState>()(
                 user: state.user,
                 accessToken: state.accessToken,
                 isAuthenticated: state.isAuthenticated
-            }), // Only persist authentication data, not modal state
+            }),
         }
     )
 );

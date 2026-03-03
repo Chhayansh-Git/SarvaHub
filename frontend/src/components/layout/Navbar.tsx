@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useUserStore } from "@/store/userStore";
+import { useCartStore } from "@/store/cartStore";
 import { OmniSearchBar } from "@/components/search/OmniSearchBar";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 
@@ -15,11 +16,15 @@ export function Navbar() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const pathname = usePathname();
     const { isAuthenticated, openAuthModal } = useUserStore();
+    const itemCount = useCartStore(state => state.itemCount);
+    const fetchCart = useCartStore(state => state.fetchCart);
 
     useEffect(() => {
         // eslint-disable-next-line
         setMounted(true);
-    }, []);
+        // Fetch cart on mount when authenticated
+        if (isAuthenticated) fetchCart();
+    }, [isAuthenticated, fetchCart]);
 
     // Hide consumer navbar on seller routes
     if (pathname.startsWith('/seller')) {
@@ -82,7 +87,7 @@ export function Navbar() {
                         >
                             <ShoppingBag className="h-5 w-5" />
                             <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-accent text-[10px] font-bold text-accent-foreground flex items-center justify-center">
-                                3
+                                {itemCount}
                             </span>
                         </button>
                     </div>

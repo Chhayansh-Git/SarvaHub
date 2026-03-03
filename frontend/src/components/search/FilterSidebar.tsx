@@ -1,26 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, ChevronDown, SlidersHorizontal, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const categories = ["All Products", "Electronics", "Fashion", "Home & Design", "Beauty", "Sports"];
-const brands = ["Acoustica", "Heritage Tailors", "Milano Crafted", "Swiss Precision", "Nike", "Sony"];
+// ─── Types ──────────────────────────────────────────────────────────
 
-export function FilterSidebar() {
+interface FiltersData {
+    availableCategories?: string[];
+    availableBrands?: string[];
+    priceRange?: { min: number; max: number };
+}
+
+interface FilterSidebarProps {
+    filters?: FiltersData;
+    selectedCategory?: string;
+    selectedBrands?: string[];
+    selectedRating?: number;
+    maxPrice?: number;
+    onCategoryChange?: (category: string) => void;
+    onBrandToggle?: (brand: string) => void;
+    onRatingChange?: (rating: number | null) => void;
+    onPriceChange?: (maxPrice: number) => void;
+    onClearAll?: () => void;
+}
+
+// ─── Component ──────────────────────────────────────────────────────
+
+const DEFAULT_CATEGORIES = ["All Products", "Electronics", "Fashion", "Home & Design", "Beauty", "Sports"];
+const DEFAULT_BRANDS = ["Acoustica", "Heritage Tailors", "Milano Crafted", "Swiss Precision", "Nike", "Sony"];
+
+export function FilterSidebar({
+    filters,
+    selectedCategory = "All Products",
+    selectedBrands = [],
+    selectedRating,
+    maxPrice,
+    onCategoryChange,
+    onBrandToggle,
+    onRatingChange,
+    onPriceChange,
+    onClearAll,
+}: FilterSidebarProps) {
     const [expandedSection, setExpandedSection] = useState<string | null>("Category");
-    const [selectedCategory, setSelectedCategory] = useState("All Products");
-    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-    const [priceRange, setPriceRange] = useState([0, 5000]);
+
+    const categories = filters?.availableCategories?.length
+        ? ["All Products", ...filters.availableCategories]
+        : DEFAULT_CATEGORIES;
+
+    const brands = filters?.availableBrands?.length
+        ? filters.availableBrands
+        : DEFAULT_BRANDS;
+
+    const priceMax = filters?.priceRange?.max || 500000;
+    const currentMaxPrice = maxPrice ?? priceMax;
 
     const toggleSection = (section: string) => {
         setExpandedSection(expandedSection === section ? null : section);
-    };
-
-    const toggleBrand = (brand: string) => {
-        setSelectedBrands(prev =>
-            prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
-        );
     };
 
     return (
@@ -31,7 +67,10 @@ export function FilterSidebar() {
                         <SlidersHorizontal className="h-5 w-5 text-accent" />
                         Filters
                     </h2>
-                    <button className="text-sm text-muted-foreground hover:text-accent transition-colors">
+                    <button
+                        onClick={onClearAll}
+                        className="text-sm text-muted-foreground hover:text-accent transition-colors"
+                    >
                         Clear all
                     </button>
                 </div>
@@ -57,8 +96,8 @@ export function FilterSidebar() {
                                 {categories.map((category) => (
                                     <button
                                         key={category}
-                                        onClick={() => setSelectedCategory(category)}
-                                        className={`block w-full text-left text-sm py-1.5 transition-colors ${selectedCategory === category ? "text-accent font-medium" : "text-muted-foreground hover:text-foreground"
+                                        onClick={() => onCategoryChange?.(category === "All Products" ? "" : category)}
+                                        className={`block w-full text-left text-sm py-1.5 transition-colors ${(selectedCategory === category || (!selectedCategory && category === "All Products")) ? "text-accent font-medium" : "text-muted-foreground hover:text-foreground"
                                             }`}
                                     >
                                         {category}
@@ -88,16 +127,16 @@ export function FilterSidebar() {
                                 className="overflow-hidden space-y-4"
                             >
                                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                    <span>₹{priceRange[0].toLocaleString('en-IN')}</span>
-                                    <span>₹{priceRange[1].toLocaleString('en-IN')}</span>
+                                    <span>₹0</span>
+                                    <span>₹{currentMaxPrice.toLocaleString('en-IN')}</span>
                                 </div>
                                 <input
                                     type="range"
                                     min="0"
-                                    max="500000"
+                                    max={priceMax}
                                     step="5000"
-                                    value={priceRange[1]}
-                                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                                    value={currentMaxPrice}
+                                    onChange={(e) => onPriceChange?.(parseInt(e.target.value))}
                                     className="w-full accent-accent bg-border h-1 rounded-full appearance-none outline-none"
                                 />
                             </motion.div>
@@ -124,7 +163,7 @@ export function FilterSidebar() {
                                 className="overflow-hidden space-y-3"
                             >
                                 {brands.map((brand) => (
-                                    <label key={brand} onClick={() => toggleBrand(brand)} className="flex items-center gap-3 cursor-pointer group">
+                                    <label key={brand} onClick={() => onBrandToggle?.(brand)} className="flex items-center gap-3 cursor-pointer group">
                                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedBrands.includes(brand) ? 'bg-accent border-accent text-accent-foreground' : 'border-border group-hover:border-accent'
                                             }`}>
                                             {selectedBrands.includes(brand) && <Check className="h-3 w-3" />}
@@ -156,10 +195,14 @@ export function FilterSidebar() {
                                 className="overflow-hidden space-y-3"
                             >
                                 {[4, 3, 2, 1].map((rating) => (
-                                    <label key={rating} className="flex items-center gap-2 cursor-pointer group">
-                                        <input type="radio" name="rating" className="hidden" />
-                                        <div className="w-4 h-4 rounded-full border border-border group-hover:border-accent flex items-center justify-center transition-colors">
-                                            <div className="w-2 h-2 rounded-full bg-transparent transition-colors group-active:bg-accent" />
+                                    <label
+                                        key={rating}
+                                        onClick={() => onRatingChange?.(selectedRating === rating ? null : rating)}
+                                        className="flex items-center gap-2 cursor-pointer group"
+                                    >
+                                        <input type="radio" name="rating" className="hidden" checked={selectedRating === rating} readOnly />
+                                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${selectedRating === rating ? 'border-accent' : 'border-border group-hover:border-accent'}`}>
+                                            <div className={`w-2 h-2 rounded-full transition-colors ${selectedRating === rating ? 'bg-accent' : 'bg-transparent'}`} />
                                         </div>
                                         <div className="flex items-center gap-1">
                                             {Array.from({ length: 5 }).map((_, i) => (

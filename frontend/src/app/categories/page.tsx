@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const categories = [
+const FALLBACK_CATEGORIES = [
     {
         id: "fashion",
         title: "Fashion & Apparel",
@@ -39,6 +40,31 @@ const categories = [
 ];
 
 export default function CategoriesPage() {
+    const [categories, setCategories] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchCategories() {
+            try {
+                const { api } = await import('@/lib/api');
+                const data = await api.get<any>('/categories');
+                // Ensure the returned data is an array and adapt styling properties if needed
+                const formattedList = Array.isArray(data) ? data : (data.categories || []);
+                if (formattedList.length > 0) {
+                    setCategories(formattedList);
+                } else {
+                    setCategories(FALLBACK_CATEGORIES);
+                }
+            } catch (error) {
+                setCategories(FALLBACK_CATEGORIES);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchCategories();
+    }, []);
+
     return (
         <div className="min-h-screen pt-32 pb-24 bg-background">
             <div className="container mx-auto px-4">
@@ -53,39 +79,48 @@ export default function CategoriesPage() {
                     </p>
                 </div>
 
-                {/* Bento Grid layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 auto-rows-[250px] md:auto-rows-[300px] animate-in fade-in slide-in-from-bottom-8 duration-500 delay-100">
-                    {categories.map((cat, idx) => (
-                        <Link
-                            key={cat.id}
-                            href={`/category/${cat.id}`}
-                            className={`group relative overflow-hidden rounded-3xl ${cat.colSpan} ${cat.rowSpan}`}
-                        >
-                            {/* Background Image */}
-                            <div
-                                className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
-                                style={{ backgroundImage: `url(${cat.image})` }}
-                            />
+                {isLoading ? (
+                    <div className="py-20 flex flex-col items-center justify-center text-muted-foreground">
+                        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                        <p>Loading categories...</p>
+                    </div>
+                ) : (
+                    /* Bento Grid layout */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 auto-rows-[250px] md:auto-rows-[300px] animate-in fade-in slide-in-from-bottom-8 duration-500 delay-100">
+                        {categories.map((cat, idx) => (
+                            <Link
+                                key={cat.id || idx}
+                                href={`/search?category=${encodeURIComponent(cat.title || cat.name || cat.id)}`}
+                                className={`group relative overflow-hidden rounded-3xl ${cat.colSpan || 'col-span-1'} ${cat.rowSpan || 'row-span-1'}`}
+                            >
+                                {/* Background Image */}
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
+                                    style={{ backgroundImage: `url(${cat.image || 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=1200'})` }}
+                                />
 
-                            {/* Overlay Gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                                {/* Overlay Gradient */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-                            {/* Category Info */}
-                            <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
-                                <h3 className="text-2xl md:text-3xl font-heading font-bold text-white mb-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                    {cat.title}
-                                </h3>
-                                <p className="text-white/80 text-sm md:text-base mb-6 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-75 line-clamp-2">
-                                    {cat.description}
-                                </p>
+                                {/* Category Info */}
+                                <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
+                                    <h3 className="text-2xl md:text-3xl font-heading font-bold text-white mb-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                        {cat.title || cat.name}
+                                    </h3>
+                                    {cat.description && (
+                                        <p className="text-white/80 text-sm md:text-base mb-6 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-75 line-clamp-2">
+                                            {cat.description}
+                                        </p>
+                                    )}
 
-                                <span className="inline-flex items-center gap-2 text-white font-bold text-sm tracking-wider uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                                    Browse Collection <ArrowRight className="h-4 w-4" />
-                                </span>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
+                                    <span className="inline-flex items-center gap-2 text-white font-bold text-sm tracking-wider uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                        Browse Collection <ArrowRight className="h-4 w-4" />
+                                    </span>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                )}
 
                 {/* All Brands Ribbon */}
                 <div className="mt-20 p-8 glass-panel border border-border/50 rounded-3xl text-center">

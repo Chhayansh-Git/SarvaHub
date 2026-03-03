@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import { Play, ShoppingBag, Heart, ShieldCheck, Truck, RotateCcw, Shield, Check } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
 import { ShareProduct } from "@/components/product/ShareProduct";
 import { ReviewSection } from "@/components/product/ReviewSection";
 import { useHistoryStore } from "@/store/historyStore";
-import { useEffect } from "react";
+import { useCartStore } from "@/store/cartStore";
+import { api } from "@/lib/api";
 
-// Dummy product for scaffold
-const product = {
+// Fallback product data for when backend is unavailable
+const FALLBACK_PRODUCT = {
     id: "prod_x8922",
     name: "Chronograph Automatic 42mm",
     brand: "Orion Watch Co.",
@@ -58,30 +60,104 @@ const product = {
 };
 
 export default function ProductDetail() {
+    const params = useParams();
+    const slug = params.slug as string;
+
+    const [product, setProduct] = useState<any>(FALLBACK_PRODUCT);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
-    const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+    const [selectedColor, setSelectedColor] = useState(product.colors?.[0]);
+    const [addingToBag, setAddingToBag] = useState(false);
 
     const { isAuthenticated, openAuthModal } = useUserStore();
     const addRecentlyViewed = useHistoryStore(state => state.addRecentlyViewed);
+    const addItem = useCartStore(state => state.addItem);
 
-    const handleAddToBag = () => {
+    // Fetch product from API
+    useEffect(() => {
+        async function fetchProduct() {
+            try {
+                const data = await api.get<any>(`/products/${slug}`);
+                // Normalize API response to match our expected shape
+                const normalized = {
+                    ...data,
+                    reviews: data.reviewCount || data.reviews || 0,
+                    images: Array.isArray(data.images)
+                        ? data.images.map((img: any) => typeof img === 'string' ? img : img.url)
+                        : FALLBACK_PRODUCT.images,
+                    colors: data.colors || FALLBACK_PRODUCT.colors,
+                    authenticity: {
+                        verified: data.authenticity?.verified ?? true,
+                        batch: data.authenticity?.batchId || data.authenticity?.batch || "N/A",
+                        origin: data.authenticity?.origin || "India",
+                    },
+                    seller: data.seller || FALLBACK_PRODUCT.seller,
+                    returnPolicy: data.returnPolicy ? {
+                        type: data.returnPolicy.type || "Conditional Return",
+                        window: data.returnPolicy.windowDays ? `${data.returnPolicy.windowDays} Days` : "7 Days",
+                        conditions: data.returnPolicy.conditions || "",
+                        eligible: data.returnPolicy.eligible !== false,
+                    } : FALLBACK_PRODUCT.returnPolicy,
+                };
+                setProduct(normalized);
+                if (normalized.colors?.[0]) setSelectedColor(normalized.colors[0]);
+            } catch {
+                // Use fallback product
+                setProduct(FALLBACK_PRODUCT);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchProduct();
+    }, [slug]);
+
+    const handleAddToBag = async () => {
         if (!isAuthenticated) {
             openAuthModal('login');
             return;
         }
-        // TODO: Actual add to cart logic here
-        alert("Added to cart!");
+        setAddingToBag(true);
+        try {
+            await addItem(product.id, 1, selectedColor?.name);
+        } catch {
+            // Error is handled by store
+        } finally {
+            setAddingToBag(false);
+        }
     };
 
     // Save item to Recently Viewed history
     useEffect(() => {
-        addRecentlyViewed({
-            id: product.id,
-            name: product.name,
-            image: product.images[0],
-            price: product.price
-        });
-    }, [addRecentlyViewed]);
+        if (!isLoading && product) {
+            addRecentlyViewed({
+                id: product.id,
+                name: product.name,
+                image: Array.isArray(product.images) ? product.images[0] : '',
+                price: product.price
+            });
+        }
+    }, [isLoading, product, addRecentlyViewed]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen pt-24 pb-16">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 animate-pulse">
+                        <div className="w-full lg:w-1/2">
+                            <div className="aspect-[4/5] rounded-3xl bg-muted" />
+                        </div>
+                        <div className="w-full lg:w-1/2 space-y-4">
+                            <div className="h-4 w-32 bg-muted rounded" />
+                            <div className="h-12 w-3/4 bg-muted rounded" />
+                            <div className="h-8 w-40 bg-muted rounded" />
+                            <div className="h-24 w-full bg-muted rounded" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="min-h-screen pt-24 pb-16">
@@ -123,7 +199,7 @@ export default function ProductDetail() {
 
                             {/* Thumbnail Strip */}
                             <div className="flex items-center gap-4 overflow-x-auto pb-2 custom-scrollbar">
-                                {product.images.map((img, idx) => (
+                                {product.images.map((img: string, idx: number) => (
                                     <button
                                         key={idx}
                                         onClick={() => setActiveImage(idx)}
@@ -168,7 +244,7 @@ export default function ProductDetail() {
                                     <span className="text-muted-foreground text-sm">{selectedColor.name}</span>
                                 </div>
                                 <div className="flex gap-4">
-                                    {product.colors.map((color) => (
+                                    {product.colors.map((color: any) => (
                                         <button
                                             key={color.name}
                                             onClick={() => setSelectedColor(color)}
@@ -284,7 +360,7 @@ export default function ProductDetail() {
                             </summary>
                             <div className="text-muted-foreground px-5 pb-5">
                                 <ul className="list-disc pl-5 space-y-2">
-                                    {product.features.map((f, i) => <li key={i}>{f}</li>)}
+                                    {product.features.map((f: string, i: number) => <li key={i}>{f}</li>)}
                                 </ul>
                             </div>
                         </details>

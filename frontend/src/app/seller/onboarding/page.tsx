@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Check, ChevronRight, UploadCloud, ShieldCheck, Building2, User, FileText, CheckCircle2, CreditCard, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -21,8 +21,15 @@ export default function SellerOnboarding() {
         address: "",
         category: "Luxury Watches",
         agreeToTerms: false,
-        paymentMethod: "card"
+        paymentMethod: "card",
+        businessDocUrl: "",
+        kycDocUrl: ""
     });
+
+    const docInputRef = useRef<HTMLInputElement>(null);
+    const kycInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+    const [uploadingKyc, setUploadingKyc] = useState(false);
 
     const nextStep = () => setStep((prev) => Math.min(prev + 1, 5));
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -47,6 +54,10 @@ export default function SellerOnboarding() {
                     state: '',
                     pincode: '',
                 },
+                documents: {
+                    businessRegistration: formData.businessDocUrl,
+                    identityProof: formData.kycDocUrl
+                }
             });
             setIsSuccess(true);
         } catch {
@@ -155,90 +166,155 @@ export default function SellerOnboarding() {
                             </div>
                         )}
 
-                        {step === 3 && (
-                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
-                                <h2 className="text-2xl font-heading font-bold mb-2">Document Verification</h2>
-                                <p className="text-sm text-muted-foreground mb-6">Upload clear scans of your official business documents.</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    {[
-                                        { label: 'Certificate of Incorporation', sub: 'PDF, JPG or PNG (Max 5MB)' },
-                                        { label: 'PAN / Aadhaar Card', sub: 'Founder or Authorized Rep' },
-                                    ].map((doc, i) => (
-                                        <div key={i} className="border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer group">
-                                            <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-muted-foreground group-hover:text-accent transition-colors">
-                                                <UploadCloud className="h-6 w-6" />
+                        const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'business' | 'kyc') => {
+        const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            const isBusiness = type === 'business';
+                            isBusiness ? setUploadingDoc(true) : setUploadingKyc(true);
+
+                            try {
+            const fileData = new FormData();
+                            fileData.append('file', file);
+                            fileData.append('folder', 'kyc');
+
+                            const res = await api.post('/upload', fileData, {
+                                headers: {'Content-Type': 'multipart/form-data' } // Our api client might strictly stringify otherwise if not handled correctly natively, but let's assume valid formdata support globally via interceptors or manually manage it. Our api.ts actually sends JSON natively, so we fetch directly
+            });
+            // Let's use fetch directly for FormData to bypass json stringification!
+        } catch {
+                                // Ignored temporarily
+                            }
+    };
+
+    // Fallback direct upload bypass since `api.ts` expects JSON
+    const uploadDirect = async (file: File, type: 'business' | 'kyc') => {
+        const isBusiness = type === 'business';
+                            isBusiness ? setUploadingDoc(true) : setUploadingKyc(true);
+
+                            try {
+            const fileData = new FormData();
+                            fileData.append('file', file);
+                            fileData.append('folder', 'kyc');
+            
+            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+                            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+                            const res = await fetch(`${API_URL}/upload`, {
+                                method: 'POST',
+                            headers: {
+                                ...(token ? { Authorization: `Bearer ${token}` } : {})
+                            },
+                            body: fileData
+            });
+
+                            const data = await res.json();
+                            if (data.url) {
+                if (isBusiness) setFormData({...formData, businessDocUrl: data.url});
+                            else setFormData({...formData, kycDocUrl: data.url});
+            }
+        } catch (error) {
+                                console.error(error);
+        } finally {
+                                isBusiness ? setUploadingDoc(false) : setUploadingKyc(false);
+        }
+    }
+
+                            {step === 3 && (
+                                <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                                    <h2 className="text-2xl font-heading font-bold mb-2">Document Verification</h2>
+                                    <p className="text-sm text-muted-foreground mb-6">Upload clear scans of your official business documents.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        {/* Business Doc */}
+                                        <div onClick={() => docInputRef.current?.click()} className={`border-2 border-dashed ${formData.businessDocUrl ? 'border-emerald-500 bg-emerald-500/5' : 'border-border'} rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer group relative`}>
+                                            <input type="file" ref={docInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { if (e.target.files?.[0]) uploadDirect(e.target.files[0], 'business') }} />
+
+                                            <div className={`w-12 h-12 rounded-full glass-panel flex items-center justify-center transition-colors ${formData.businessDocUrl ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent'}`}>
+                                                {uploadingDoc ? <Loader2 className="h-6 w-6 animate-spin" /> : formData.businessDocUrl ? <CheckCircle2 className="h-6 w-6" /> : <UploadCloud className="h-6 w-6" />}
                                             </div>
                                             <div>
-                                                <h4 className="font-semibold text-sm">{doc.label}</h4>
-                                                <p className="text-xs text-muted-foreground mt-1">{doc.sub}</p>
+                                                <h4 className="font-semibold text-sm">Certificate of Incorporation</h4>
+                                                <p className="text-xs text-muted-foreground mt-1">{formData.businessDocUrl ? 'Uploaded Successfully' : 'PDF, JPG or PNG (Max 5MB)'}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
-                        {step === 4 && (
-                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
-                                <div className="text-center mb-8">
-                                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                        <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-                                    </div>
-                                    <h2 className="text-2xl font-heading font-bold mb-2">Final Review & Agreement</h2>
-                                    <p className="text-muted-foreground">Review the SarvaHub Authenticity Pledge before submitting.</p>
-                                </div>
-                                <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 h-56 overflow-y-auto custom-scrollbar mb-6 text-sm text-foreground space-y-4">
-                                    <h4 className="font-bold">1. The SarvaHub Authenticity Standard</h4>
-                                    <p>Every item listed must be 100% authentic, legally sourced, and match the exact description provided.</p>
-                                    <h4 className="font-bold">2. Penalties for Counterfeits</h4>
-                                    <p>Selling counterfeit goods results in immediate account termination and legal action.</p>
-                                    <h4 className="font-bold">3. Returns and Refunds</h4>
-                                    <p>Sellers must adhere to platform return and refund policies.</p>
-                                    <h4 className="font-bold">4. Fees</h4>
-                                    <p>One-time registration fee of ₹10. Platform commission: 8% per transaction.</p>
-                                </div>
-                                <label className="flex items-start gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted transition-colors">
-                                    <input type="checkbox" className="mt-1 w-5 h-5 text-accent rounded border-gray-300 focus:ring-accent" checked={formData.agreeToTerms} onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })} />
-                                    <div>
-                                        <span className="font-bold block">I agree to the Authenticity Pledge and Platform Terms</span>
-                                        <span className="text-xs text-muted-foreground mt-1 block">I confirm that all provided information is legally accurate.</span>
-                                    </div>
-                                </label>
-                            </div>
-                        )}
+                                        {/* KYC Doc */}
+                                        <div onClick={() => kycInputRef.current?.click()} className={`border-2 border-dashed ${formData.kycDocUrl ? 'border-emerald-500 bg-emerald-500/5' : 'border-border'} rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer group relative`}>
+                                            <input type="file" ref={kycInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { if (e.target.files?.[0]) uploadDirect(e.target.files[0], 'kyc') }} />
 
-                        {step === 5 && !isSuccess && (
-                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
-                                <div className="text-center mb-6">
-                                    <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <CreditCard className="h-8 w-8 text-accent" />
-                                    </div>
-                                    <h2 className="text-2xl font-heading font-bold mb-2">Registration Fee</h2>
-                                    <p className="text-muted-foreground">Complete the one-time onboarding payment of ₹10.</p>
-                                </div>
-                                <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 space-y-6 max-w-md mx-auto">
-                                    <div className="text-center p-8 bg-muted/30 rounded-xl">
-                                        <p className="text-5xl font-black text-foreground mb-2">₹10</p>
-                                        <p className="text-sm text-muted-foreground">One-time registration fee</p>
+                                            <div className={`w-12 h-12 rounded-full glass-panel flex items-center justify-center transition-colors ${formData.kycDocUrl ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent'}`}>
+                                                {uploadingKyc ? <Loader2 className="h-6 w-6 animate-spin" /> : formData.kycDocUrl ? <CheckCircle2 className="h-6 w-6" /> : <UploadCloud className="h-6 w-6" />}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-sm">PAN / Aadhaar Card</h4>
+                                                <p className="text-xs text-muted-foreground mt-1">{formData.kycDocUrl ? 'Uploaded Successfully' : 'Founder or Authorized Rep'}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {isSuccess && (
-                            <div className="text-center py-12 animate-in fade-in duration-500">
-                                <div className="w-32 h-32 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
-                                    <Check className="h-16 w-16 text-emerald-500" />
+                            {step === 4 && (
+                                <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                                    <div className="text-center mb-8">
+                                        <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+                                        </div>
+                                        <h2 className="text-2xl font-heading font-bold mb-2">Final Review & Agreement</h2>
+                                        <p className="text-muted-foreground">Review the SarvaHub Authenticity Pledge before submitting.</p>
+                                    </div>
+                                    <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 h-56 overflow-y-auto custom-scrollbar mb-6 text-sm text-foreground space-y-4">
+                                        <h4 className="font-bold">1. The SarvaHub Authenticity Standard</h4>
+                                        <p>Every item listed must be 100% authentic, legally sourced, and match the exact description provided.</p>
+                                        <h4 className="font-bold">2. Penalties for Counterfeits</h4>
+                                        <p>Selling counterfeit goods results in immediate account termination and legal action.</p>
+                                        <h4 className="font-bold">3. Returns and Refunds</h4>
+                                        <p>Sellers must adhere to platform return and refund policies.</p>
+                                        <h4 className="font-bold">4. Fees</h4>
+                                        <p>One-time registration fee of ₹10. Platform commission: 8% per transaction.</p>
+                                    </div>
+                                    <label className="flex items-start gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted transition-colors">
+                                        <input type="checkbox" className="mt-1 w-5 h-5 text-accent rounded border-gray-300 focus:ring-accent" checked={formData.agreeToTerms} onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })} />
+                                        <div>
+                                            <span className="font-bold block">I agree to the Authenticity Pledge and Platform Terms</span>
+                                            <span className="text-xs text-muted-foreground mt-1 block">I confirm that all provided information is legally accurate.</span>
+                                        </div>
+                                    </label>
                                 </div>
-                                <h2 className="text-3xl font-heading font-black mb-4">Application Submitted!</h2>
-                                <p className="text-muted-foreground max-w-md mx-auto mb-8">
-                                    Your seller application is now under review. Our team will get back to you within 48 hours.
-                                </p>
-                                <button onClick={() => router.push('/seller/dashboard')} className="px-8 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 mx-auto">
-                                    Go to Dashboard
-                                </button>
-                            </div>
-                        )}
+                            )}
+
+                            {step === 5 && !isSuccess && (
+                                <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                                    <div className="text-center mb-6">
+                                        <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <CreditCard className="h-8 w-8 text-accent" />
+                                        </div>
+                                        <h2 className="text-2xl font-heading font-bold mb-2">Registration Fee</h2>
+                                        <p className="text-muted-foreground">Complete the one-time onboarding payment of ₹10.</p>
+                                    </div>
+                                    <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 space-y-6 max-w-md mx-auto">
+                                        <div className="text-center p-8 bg-muted/30 rounded-xl">
+                                            <p className="text-5xl font-black text-foreground mb-2">₹10</p>
+                                            <p className="text-sm text-muted-foreground">One-time registration fee</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isSuccess && (
+                                <div className="text-center py-12 animate-in fade-in duration-500">
+                                    <div className="w-32 h-32 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
+                                        <Check className="h-16 w-16 text-emerald-500" />
+                                    </div>
+                                    <h2 className="text-3xl font-heading font-black mb-4">Application Submitted!</h2>
+                                    <p className="text-muted-foreground max-w-md mx-auto mb-8">
+                                        Your seller application is now under review. Our team will get back to you within 48 hours.
+                                    </p>
+                                    <button onClick={() => router.push('/seller/dashboard')} className="px-8 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 mx-auto">
+                                        Go to Dashboard
+                                    </button>
+                                </div>
+                            )}
                     </div>
 
                     {!isSuccess && (

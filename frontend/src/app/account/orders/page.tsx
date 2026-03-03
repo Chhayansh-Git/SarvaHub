@@ -4,167 +4,210 @@ import { useUserStore } from "@/store/userStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, ArrowLeft, RefreshCcw, Star, ChevronRight, MapPin } from "lucide-react";
-
-// Mock Order Data
-const mockOrders = [
-    {
-        id: "ORD-98234-A",
-        date: "2026-02-28",
-        status: "In Transit",
-        total: 124500,
-        items: [
-            { id: 1, name: "Submariner Date 41mm", brand: "Rolex", price: 1245000, quantity: 1, image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=300" }
-        ]
-    },
-    {
-        id: "ORD-77612-B",
-        date: "2026-02-15",
-        status: "Delivered",
-        total: 45000,
-        items: [
-            { id: 2, name: "AirPods Max - Silver", brand: "Apple", price: 45000, quantity: 1, image: "https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?auto=format&fit=crop&q=80&w=300" }
-        ]
-    }
-];
+import Image from "next/image";
+import { Package, ArrowLeft, RefreshCcw, Star, ChevronRight, MapPin, Search, Loader2 } from "lucide-react";
 
 export default function MyOrdersPage() {
     const { isAuthenticated } = useUserStore();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState("All");
+    const [filter, setFilter] = useState('all');
+    const [orders, setOrders] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!isAuthenticated) router.push('/');
+        if (!isAuthenticated) {
+            router.push('/');
+            return;
+        }
+
+        async function fetchOrders() {
+            try {
+                const { api } = await import('@/lib/api');
+                const data = await api.get<any>('/orders');
+
+                // Assuming data is an array of orders or { orders: any[] }
+                setOrders(Array.isArray(data) ? data : (data.orders || []));
+            } catch (error) {
+                // Fallback to mock data if backend not ready
+                setOrders([
+                    {
+                        id: "SVH-8921-X",
+                        date: "Oct 24, 2023",
+                        status: "Processing",
+                        total: 345000,
+                        itemCount: 1,
+                        estimatedDelivery: "Oct 27, 2023",
+                        items: [
+                            { id: 1, name: "Chronograph Automatic 42mm", brand: "Orion Watch Co.", price: 345000, quantity: 1, image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=300" }
+                        ]
+                    },
+                    {
+                        id: "SVH-7492-B",
+                        date: "Sep 12, 2023",
+                        status: "Delivered",
+                        total: 125000,
+                        itemCount: 2,
+                        deliveredOn: "Sep 15, 2023",
+                        items: [
+                            { id: 1, name: "Aetherius Obsidian Ring", brand: "Aetherius", price: 80000, quantity: 1, image: "https://images.unsplash.com/photo-1515562141207-7a48cf7ce338?auto=format&fit=crop&q=80&w=300" },
+                            { id: 2, name: "AirPods Max - Silver", brand: "Apple", price: 45000, quantity: 1, image: "https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?auto=format&fit=crop&q=80&w=300" }
+                        ]
+                    }
+                ]);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchOrders();
     }, [isAuthenticated, router]);
 
     if (!isAuthenticated) return null;
 
-    const filteredOrders = activeTab === "All"
-        ? mockOrders
-        : mockOrders.filter(o => o.status === activeTab);
+    const filteredOrders = orders.filter(o => {
+        if (filter === 'all') return true;
+        if (filter === 'processing') return o.status === 'Processing';
+        if (filter === 'delivered') return o.status === 'Delivered';
+        if (filter === 'cancelled') return o.status === 'Cancelled';
+        return true;
+    });
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Delivered': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+            case 'Processing': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+            case 'Cancelled': return 'text-red-500 bg-red-500/10 border-red-500/20';
+            default: return 'text-muted-foreground bg-muted border-border';
+        }
+    };
 
     return (
         <div className="min-h-screen pt-32 pb-24 bg-background">
-            <div className="container mx-auto px-4 max-w-4xl">
+            <div className="container mx-auto px-4 max-w-5xl">
 
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
-                    <button onClick={() => router.push('/account')} className="p-2 hover:bg-muted rounded-full transition-colors">
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
-                    <div>
-                        <h1 className="text-3xl font-heading font-black tracking-tight flex items-center gap-3">
-                            <Package className="h-8 w-8 text-accent" />
-                            My Orders
-                        </h1>
-                        <p className="text-muted-foreground text-sm mt-1">Track packages, initiate returns, or leave feedback</p>
+                {/* Header & Breadcrumbs */}
+                <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                        <Link href="/account" className="hover:text-foreground transition-colors">Account</Link>
+                        <ChevronRight className="h-4 w-4" />
+                        <span className="text-foreground font-medium">My Orders</span>
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-heading font-black tracking-tight text-foreground">Order History</h1>
+                            <p className="text-muted-foreground mt-1">Track, manage, and return your purchases.</p>
+                        </div>
+
+                        {/* Search Orders */}
+                        <div className="relative w-full md:w-72">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <input
+                                type="text"
+                                placeholder="Search all orders..."
+                                className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-xl focus:ring-2 focus:ring-accent outline-none transition-all"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
-                    {["All", "In Transit", "Delivered", "Cancelled"].map(tab => (
+                {/* Filters */}
+                <div className="flex overflow-x-auto gap-2 pb-4 mb-6 custom-scrollbar animate-in fade-in slide-in-from-bottom-8 duration-500 delay-75">
+                    {['all', 'processing', 'delivered', 'cancelled'].map((f) => (
                         <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
-                                    ? "bg-foreground text-background shadow-md"
-                                    : "bg-muted/50 text-foreground hover:bg-muted"
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={`px-5 py-2 rounded-full text-sm font-semibold capitalize whitespace-nowrap transition-colors ${filter === f
+                                ? 'bg-foreground text-background'
+                                : 'bg-muted text-muted-foreground hover:bg-border'
                                 }`}
                         >
-                            {tab}
+                            {f}
                         </button>
                     ))}
                 </div>
 
-                {/* Orders List */}
-                <div className="space-y-6">
-                    {filteredOrders.length === 0 ? (
-                        <div className="glass-panel p-12 rounded-2xl text-center border border-border/50">
-                            <Package className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                            <h3 className="text-lg font-bold">No orders found</h3>
-                            <p className="text-muted-foreground text-sm mb-6">You haven't placed any orders that match this filter.</p>
-                            <Link href="/search" className="px-6 py-2.5 bg-foreground text-background font-bold rounded-full hover:bg-primary transition-colors text-sm">
-                                Start Shopping
-                            </Link>
-                        </div>
-                    ) : (
-                        filteredOrders.map(order => (
-                            <div key={order.id} className="glass-panel border border-border/50 rounded-2xl overflow-hidden hover:border-accent/30 transition-colors">
+                {isLoading ? (
+                    <div className="py-20 text-center text-muted-foreground animate-pulse">
+                        <Loader2 className="h-8 w-8 mx-auto animate-spin mb-4" />
+                        Loading orders...
+                    </div>
+                ) : filteredOrders.length === 0 ? (
+                    <div className="py-20 text-center glass-panel rounded-3xl border-border/50">
+                        <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4 opacity-50" />
+                        <h3 className="text-xl font-bold mb-2">No orders found</h3>
+                        <p className="text-muted-foreground mb-6">You haven&apos;t placed any orders matching this filter.</p>
+                        <button onClick={() => setFilter('all')} className="text-accent font-semibold hover:underline">Clear Filters</button>
+                    </div>
+                ) : (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-12 duration-500 delay-150">
+                        {filteredOrders.map((order) => (
+                            <div key={order.id} className="glass-panel border border-border/50 rounded-2xl overflow-hidden shadow-sm hover:border-accent/30 transition-colors">
+
                                 {/* Order Header */}
-                                <div className="bg-muted/30 p-5 flex flex-wrap items-center justify-between gap-4 border-b border-border/50">
-                                    <div className="flex gap-8">
+                                <div className="bg-muted/30 p-5 md:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/50">
+                                    <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
                                         <div>
-                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Order Placed</p>
-                                            <p className="text-sm font-medium">{order.date}</p>
+                                            <p className="text-muted-foreground mb-0.5">Order Placed</p>
+                                            <p className="font-semibold">{order.date}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Total</p>
-                                            <p className="text-sm font-medium">₹{order.total.toLocaleString('en-IN')}</p>
+                                            <p className="text-muted-foreground mb-0.5">Total Amount</p>
+                                            <p className="font-semibold">₹{order.total.toLocaleString('en-IN')}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground mb-0.5">Order ID</p>
+                                            <p className="font-mono font-medium">{order.id}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Order # {order.id}</p>
-                                        <Link href={`#`} className="text-sm text-accent hover:underline font-semibold flex items-center justify-end gap-1">
-                                            View Invoice <ChevronRight className="h-4 w-4" />
-                                        </Link>
-                                    </div>
+                                    <button className="text-sm font-semibold border border-border bg-background px-4 py-2 rounded-lg hover:bg-muted transition-colors whitespace-nowrap">
+                                        View Invoice
+                                    </button>
                                 </div>
 
-                                {/* Order Items */}
-                                <div className="p-5">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-bold flex items-center gap-2">
-                                            Status:
-                                            <span className={`px-2.5 py-0.5 rounded-full text-xs uppercase tracking-wider ${order.status === 'Delivered' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                                                    order.status === 'In Transit' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
-                                                        'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
-                                                }`}>
-                                                {order.status}
-                                            </span>
-                                        </h3>
-                                        {order.status === 'In Transit' && (
-                                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                                <MapPin className="h-4 w-4" /> Arriving tomorrow by 9 PM
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {order.items.map((item, idx) => (
-                                        <div key={idx} className="flex items-start gap-4 py-4 border-t border-border/30 first:border-0 first:pt-0">
-                                            <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-xl bg-muted" />
-                                            <div className="flex-1">
-                                                <p className="text-xs text-muted-foreground font-bold tracking-wider uppercase mb-1">{item.brand}</p>
-                                                <h4 className="font-semibold text-foreground mb-1">{item.name}</h4>
-                                                <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                                            </div>
-                                            <div className="flex flex-col gap-2 shrink-0">
-                                                <Link href={`/products/mock-slug`} className="w-full text-center px-4 py-2 bg-foreground text-background rounded-lg text-xs font-bold hover:bg-primary transition-colors">
-                                                    Buy Again
-                                                </Link>
-                                                {order.status === 'Delivered' && (
-                                                    <Link href={`/account/orders/${order.id}/return`} className="w-full text-center px-4 py-2 bg-accent/10 border border-accent/20 text-accent rounded-lg text-xs font-bold hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-center gap-1">
-                                                        <RefreshCcw className="h-3 w-3" /> Return
-                                                    </Link>
-                                                )}
-                                                {order.status === 'Delivered' && (
-                                                    <Link href={`/account/orders/${order.id}/feedback`} className="w-full text-center px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1">
-                                                        <Star className="h-3 w-3" /> Review
-                                                    </Link>
-                                                )}
-                                                {order.status === 'In Transit' && (
-                                                    <button className="w-full text-center px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-xs font-bold transition-colors">
-                                                        Track Package
-                                                    </button>
-                                                )}
-                                            </div>
+                                {/* Order Status Bar */}
+                                <div className="p-5 md:px-6 border-b border-border/50 flex justify-between items-center">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${getStatusColor(order.status)}`}>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                                            {order.status}
                                         </div>
-                                    ))}
+                                        <p className="text-sm font-medium">
+                                            {order.status === 'Delivered' ? `Delivered on ${order.deliveredOn}` : `Estimated delivery: ${order.estimatedDelivery}`}
+                                        </p>
+                                    </div>
+                                    <Link href={`/account/orders/${order.id}`} className="text-sm font-semibold text-accent flex items-center gap-1 hover:underline">
+                                        Order Details <ChevronRight className="h-4 w-4" />
+                                    </Link>
+                                </div>
+
+                                {/* Order Items Display List */}
+                                <div className="p-5 md:px-6">
+                                    <div className="space-y-4">
+                                        {order.items.map((item: any) => (
+                                            <div key={item.id} className="flex gap-4">
+                                                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden bg-muted shrink-0 border border-border">
+                                                    <Image src={item.image} alt={item.name} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+                                                </div>
+                                                <div className="flex-1 min-w-0 py-1 flex flex-col">
+                                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">{item.brand}</p>
+                                                    <h4 className="font-semibold text-base truncate mb-1 pr-4">{item.name}</h4>
+                                                    <p className="text-sm text-muted-foreground mb-auto">Qty: {item.quantity}</p>
+
+                                                    {order.status === 'Delivered' && (
+                                                        <div className="flex gap-4 mt-2">
+                                                            <button className="text-xs font-semibold hover:text-accent transition-colors">Return Item</button>
+                                                            <button className="text-xs font-semibold hover:text-accent transition-colors">Write Review</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

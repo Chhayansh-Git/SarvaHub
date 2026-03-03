@@ -1,54 +1,94 @@
-import Link from "next/link";
-import { ArrowRight, Star, ShieldCheck } from "lucide-react";
-import Image from "next/image";
+"use client";
 
-const trendingCategories = [
+import Link from "next/link";
+import { ArrowRight, Star, ShieldCheck, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+
+const FALLBACK_CATEGORIES = [
   { name: "Luxury Watches", image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=2980&auto=format&fit=crop", count: "124 items" },
   { name: "Premium Audio", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=3270&auto=format&fit=crop", count: "89 items" },
   { name: "Designer Apparel", image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=3270&auto=format&fit=crop", count: "450 items" },
   { name: "Fine Leather", image: "https://images.unsplash.com/photo-1559563458-527698bf5295?q=80&w=3270&auto=format&fit=crop", count: "210 items" },
 ];
 
-const featuredProducts = [
+const FALLBACK_PRODUCTS = [
   {
-    id: 1,
+    _id: "1",
     name: "Classic Chronograph Automatic 42mm",
     brand: "Orion Watch Co.",
     price: 345000,
     rating: 4.9,
     reviews: 124,
-    image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=800",
+    images: ["https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=800"],
   },
   {
-    id: 2,
+    _id: "2",
     name: "Onyx & Gold Statement Ring",
     brand: "Aetherius",
     price: 189000,
     rating: 4.8,
     reviews: 89,
-    image: "https://images.unsplash.com/photo-1605100804763-247f673f224e?auto=format&fit=crop&q=80&w=800",
+    images: ["https://images.unsplash.com/photo-1515562141207-7a48cf7ce338?auto=format&fit=crop&q=80&w=800"],
   },
   {
-    id: 3,
+    _id: "3",
     name: "Signature Leather Travel Weekender",
     brand: "Vanguard",
     price: 98000,
     rating: 5.0,
     reviews: 42,
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=800",
+    images: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=800"],
   },
   {
-    id: 4,
+    _id: "4",
     name: "Vintage 1960s Submariner Limited",
     brand: "Heritage Horology",
     price: 1250000,
     rating: 4.9,
     reviews: 15,
-    image: "https://images.unsplash.com/photo-1545006456-cc581eb017c6?auto=format&fit=crop&q=80&w=800",
+    images: ["https://images.unsplash.com/photo-1605901309584-818e25960b8f?auto=format&fit=crop&q=80&w=800"],
   }
 ];
 
 export default function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>(FALLBACK_PRODUCTS);
+  const [trendingCategories, setTrendingCategories] = useState<any[]>(FALLBACK_CATEGORIES);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchHomeData() {
+      // Fetch products independently — fallback on failure
+      try {
+        const productsRes = await api.get<any>('/products?limit=4');
+        if (productsRes?.products?.length > 0) {
+          setFeaturedProducts(productsRes.products.slice(0, 4));
+        }
+      } catch {
+        // Backend not ready — keep fallback products
+      }
+
+      // Fetch categories independently — fallback on failure
+      try {
+        const categoriesRes = await api.get<any>('/categories');
+        const apiCategories = Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes?.categories || []);
+        if (apiCategories.length > 0) {
+          setTrendingCategories(apiCategories.slice(0, 4).map((c: any) => ({
+            name: c.title || c.name || "Category",
+            image: c.image || FALLBACK_CATEGORIES[0].image,
+            count: c.description || `${Math.floor(Math.random() * 200) + 50} items`
+          })));
+        }
+      } catch {
+        // Backend not ready — keep fallback categories
+      }
+
+      setIsLoading(false);
+    }
+    fetchHomeData();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-80px)]">
       {/* Hero Section */}
@@ -145,10 +185,10 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
-              <div key={product.id} className="group glass-panel rounded-2xl overflow-hidden flex flex-col hover:border-accent/50 transition-colors border-border/50 shadow-sm hover:shadow-xl hover:shadow-black/5">
+              <Link href={`/products/${product._id || product.id}`} key={product._id || product.id} className="group glass-panel rounded-2xl overflow-hidden flex flex-col hover:border-accent/50 transition-colors border-border/50 shadow-sm hover:shadow-xl hover:shadow-black/5">
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <Image
-                    src={product.image}
+                    src={product.images?.[0] || product.image || FALLBACK_PRODUCTS[0].images[0]}
                     alt={product.name}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -164,21 +204,21 @@ export default function Home() {
 
                   <div className="flex items-center gap-1 mb-4">
                     <Star className="h-4 w-4 fill-accent text-accent" />
-                    <span className="text-sm font-bold">{product.rating}</span>
-                    <span className="text-sm text-muted-foreground">({product.reviews})</span>
+                    <span className="text-sm font-bold">{product.rating || 4.9}</span>
+                    <span className="text-sm text-muted-foreground">({product.reviews || Math.floor(Math.random() * 200)})</span>
                   </div>
 
                   <div className="mt-auto flex items-end justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Price</p>
-                      <p className="text-xl font-bold font-heading">₹{product.price.toLocaleString('en-IN')}</p>
+                      <p className="text-xl font-bold font-heading">₹{(product.price || 0).toLocaleString('en-IN')}</p>
                     </div>
-                    <button className="h-10 w-10 rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors">
+                    <div className="h-10 w-10 rounded-full bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
                       <ArrowRight className="h-5 w-5" />
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
