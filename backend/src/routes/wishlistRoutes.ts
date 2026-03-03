@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth';
+import { getWishlist, addToWishlist, removeFromWishlist } from '../controllers/wishlistController';
+
+const router = Router();
+
+router.use(authenticate);
+
+router.get('/', getWishlist);
+router.post('/', addToWishlist);
+router.delete('/:id', removeFromWishlist);
+
+export default router;
