@@ -27,7 +27,7 @@ export default function SellerSupportCenterPage() {
 
             {/* Quick Categories */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <Link href="#" className="glass-panel p-6 rounded-2xl border border-border/50 hover:border-accent/40 transition-colors group">
+                <Link href="/seller/support/contact" className="glass-panel p-6 rounded-2xl border border-border/50 hover:border-accent/40 transition-colors group">
                     <div className="h-12 w-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <Book className="h-6 w-6 text-blue-500" />
                     </div>
@@ -36,7 +36,7 @@ export default function SellerSupportCenterPage() {
                     <span className="text-sm font-bold text-accent group-hover:underline flex items-center gap-1">Read Guides <ArrowRight className="h-4 w-4" /></span>
                 </Link>
 
-                <Link href="#" className="glass-panel p-6 rounded-2xl border border-border/50 hover:border-accent/40 transition-colors group">
+                <Link href="/seller/support/contact" className="glass-panel p-6 rounded-2xl border border-border/50 hover:border-accent/40 transition-colors group">
                     <div className="h-12 w-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <MessageSquare className="h-6 w-6 text-green-500" />
                     </div>
@@ -45,7 +45,7 @@ export default function SellerSupportCenterPage() {
                     <span className="text-sm font-bold text-accent group-hover:underline flex items-center gap-1">View Articles <ArrowRight className="h-4 w-4" /></span>
                 </Link>
 
-                <Link href="#" className="glass-panel p-6 rounded-2xl border border-border/50 hover:border-accent/40 transition-colors group">
+                <Link href="/seller/support/contact" className="glass-panel p-6 rounded-2xl border border-border/50 hover:border-accent/40 transition-colors group">
                     <div className="h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <AlertTriangle className="h-6 w-6 text-orange-500" />
                     </div>

@@ -162,9 +162,6 @@ export function AuthModal() {
                             <div className="space-y-1">
                                 <div className="flex justify-between items-center">
                                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Password</label>
-                                    {authModalType === 'login' && (
-                                        <a href="#" className="text-xs font-semibold text-accent hover:underline">Forgot?</a>
-                                    )}
                                 </div>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
