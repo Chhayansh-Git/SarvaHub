@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShoppingBag, User, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { useUserStore } from "@/store/userStore";
 import { useCartStore } from "@/store/cartStore";
@@ -106,7 +106,9 @@ export function Navbar() {
                     </nav>
 
                     {/* Omni-Search Bar (Desktop) */}
-                    <OmniSearchBar />
+                    <Suspense fallback={<div className="flex-1 max-w-2xl px-4 hidden md:block"><div className="h-12 w-full bg-muted/50 rounded-full animate-pulse" /></div>}>
+                        <OmniSearchBar />
+                    </Suspense>
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">

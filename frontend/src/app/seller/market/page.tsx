@@ -225,9 +225,9 @@ function MarketContent() {
 
 // ─── Page Wrapper ───────────────────────────────────────────────────
 
-export default function MarketInsightsPage() {
+export default function MarketPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen pt-12 pb-16"><div className="animate-pulse h-12 w-64 bg-muted rounded mb-8"></div></div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center p-8">Loading Market...</div>}>
             <MarketContent />
         </Suspense>
     );

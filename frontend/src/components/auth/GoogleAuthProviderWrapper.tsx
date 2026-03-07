@@ -3,12 +3,8 @@
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export function GoogleAuthProviderWrapper({ children }: { children: React.ReactNode }) {
-    // If the Client ID is missing, we render the children directly (fallback mode)
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
-    if (!clientId) {
-        return <>{children}</>;
-    }
+    // Provide a fallback client ID so that build (SSG) won't crash when Auth modules are scanned
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy_client_id_for_build';
 
     return (
         <GoogleOAuthProvider clientId={clientId}>

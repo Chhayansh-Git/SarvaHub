@@ -21,6 +21,7 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
+    "google-auth-library": "^10.6.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.3",
@@ -32,6 +33,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -40,6 +42,7 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^25.3.3",
     "@types/qrcode": "^1.5.6",
+    "@types/sendgrid": "^2.0.31",
     "@types/twilio": "^3.19.2",
     "@types/uuid": "^10.0.0",
     "nodemon": "^3.1.14",

@@ -24,6 +24,7 @@ export interface ProductCard {
     verified: boolean;
     category?: string;
     discount?: number;
+    stock?: number;
 }
 
 interface ProductGridProps {

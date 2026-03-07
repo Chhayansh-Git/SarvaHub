@@ -220,7 +220,7 @@ function SearchContent() {
 
 export default function SearchPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen pt-24 pb-16 container mx-auto px-4"><div className="animate-pulse h-12 w-64 bg-muted rounded mb-8"></div></div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center p-8">Loading Search Results...</div>}>
             <SearchContent />
         </Suspense>
     );
