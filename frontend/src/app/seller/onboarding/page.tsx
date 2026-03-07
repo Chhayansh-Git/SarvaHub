@@ -51,16 +51,14 @@ export default function SellerOnboarding() {
 
     if (!isAuthenticated || !user) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
+            <div
+                className="flex items-center justify-center min-h-[60vh] cursor-pointer"
+                onClick={() => router.push('/')}
+            >
                 <div className="text-center space-y-4">
                     <Loader2 className="h-12 w-12 text-accent animate-spin mx-auto" />
                     <p className="text-muted-foreground font-medium animate-pulse">Waiting for authentication...</p>
-                    <button
-                        onClick={() => router.push('/')}
-                        className="text-sm text-accent font-semibold hover:underline"
-                    >
-                        ← Back to Home
-                    </button>
+                    <p className="text-sm text-accent font-semibold">Click anywhere to go back to Home</p>
                 </div>
             </div>
         );
