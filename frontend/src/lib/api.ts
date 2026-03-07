@@ -131,26 +131,35 @@ export async function apiFetch<T = unknown>(
         return undefined as T;
     }
 
-    // Parse JSON
+    // Parse JSON response
     let data: any;
-    try {
-        data = await response.json();
-    } catch {
-        if (!response.ok) {
-            throw new ApiRequestError(
-                response.status,
-                'PARSE_ERROR',
-                `Request failed with status ${response.status}`
-            );
+    const text = await response.text();
+
+    if (text) {
+        try {
+            data = JSON.parse(text);
+        } catch {
+            // The response is not valid JSON — this usually means the Next.js proxy
+            // returned an HTML error page because the backend was temporarily unreachable.
+            if (!response.ok) {
+                throw new ApiRequestError(
+                    response.status,
+                    'SERVER_ERROR',
+                    response.status === 500
+                        ? 'The server is temporarily unavailable. Please try again in a moment.'
+                        : `Request failed with status ${response.status}`
+                );
+            }
+            // If response was 2xx but not JSON, return the raw text
+            return text as any as T;
         }
-        return undefined as T;
     }
 
     // Handle error responses
     if (!response.ok) {
-        const error = data?.error;
+        const error = data?.error || data;
         const code = error?.code || 'UNKNOWN_ERROR';
-        const message = error?.message || `Request failed with status ${response.status}`;
+        const message = error?.message || error?.error || `Request failed with status ${response.status}`;
 
         // Auto-logout on 401, but NOT during login/register attempts where 401 just means bad credentials
         if (response.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/register')) {

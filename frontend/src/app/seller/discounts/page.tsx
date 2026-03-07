@@ -10,6 +10,12 @@ export default function SellerDiscountsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [savingId, setSavingId] = useState<string | null>(null);
     const [successId, setSuccessId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredProducts = products.filter(p =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     useEffect(() => {
         const fetchListings = async () => {
@@ -35,12 +41,19 @@ export default function SellerDiscountsPage() {
         setSavingId(id);
         setSuccessId(null);
         try {
-            // Include sellingPrice, mrp, inventory for full update validation in backend
+            // The user wants to change the discount %. 
+            // In SarvaHub, `price` is the final selling price, and `originalPrice` is the MRP.
+            // On the discount page, `basePrice` is `product.originalPrice` (or product.price if originalPrice isn't set).
+            const baseOriginalPrice = product.originalPrice || product.price;
+            const discountPercentage = product.discount || 0;
+            const discountAmount = baseOriginalPrice * (discountPercentage / 100);
+            const newFinalPrice = Math.max(0, Math.round(baseOriginalPrice - discountAmount));
+
             await api.put(`/products/${id}`, {
                 ...product,
-                sellingPrice: product.price,
-                mrp: product.originalPrice,
-                inventory: product.stock
+                price: newFinalPrice,
+                originalPrice: baseOriginalPrice,
+                discount: discountPercentage,
             });
             setSuccessId(id);
             setTimeout(() => setSuccessId(null), 3000);
@@ -77,6 +90,8 @@ export default function SellerDiscountsPage() {
                         <input
                             type="text"
                             placeholder="Search listings by name or brand..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-muted/50 border-transparent rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
                         />
                     </div>
@@ -103,9 +118,9 @@ export default function SellerDiscountsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/30">
-                                {products.map((product) => {
+                                {filteredProducts.map((product) => {
                                     const id = product.id || product._id;
-                                    const basePrice = product.price / 100;
+                                    const basePrice = product.originalPrice || product.price;
                                     const discountAmount = basePrice * ((product.discount || 0) / 100);
                                     const finalPrice = Math.max(0, basePrice - discountAmount);
 
@@ -122,7 +137,7 @@ export default function SellerDiscountsPage() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 font-mono font-medium">₹{basePrice.toLocaleString()}</td>
+                                            <td className="px-6 py-4 font-mono font-medium">₹{basePrice.toLocaleString('en-IN')}</td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <input
@@ -137,7 +152,7 @@ export default function SellerDiscountsPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 font-mono font-bold text-emerald-500">
-                                                ₹{finalPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                ₹{finalPrice.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button

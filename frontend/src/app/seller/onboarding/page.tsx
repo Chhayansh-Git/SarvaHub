@@ -31,6 +31,13 @@ export default function SellerOnboarding() {
         phone: "",
         address: "",
         category: "Luxury Watches",
+
+        // Bank Details
+        bankAccountName: "",
+        bankAccountNumber: "",
+        bankIfsc: "",
+        bankName: "",
+
         agreeToTerms: false,
         paymentMethod: "card",
         businessDocUrl: "",
@@ -48,6 +55,12 @@ export default function SellerOnboarding() {
                 <div className="text-center space-y-4">
                     <Loader2 className="h-12 w-12 text-accent animate-spin mx-auto" />
                     <p className="text-muted-foreground font-medium animate-pulse">Waiting for authentication...</p>
+                    <button
+                        onClick={() => router.push('/')}
+                        className="text-sm text-accent font-semibold hover:underline"
+                    >
+                        ← Back to Home
+                    </button>
                 </div>
             </div>
         );
@@ -67,10 +80,15 @@ export default function SellerOnboarding() {
         if (step === 3 && !formData.category) {
             return alert("Please select a primary category.");
         }
-        if (step === 4 && !formData.businessDocUrl) {
-            return alert("Please upload business registration document.");
+        if (step === 3 && (!formData.businessDocUrl || !formData.kycDocUrl)) {
+            return alert("Please upload both business registration and KYC documents.");
         }
-        setStep((prev) => Math.min(prev + 1, 5));
+        if (step === 4) {
+            if (!formData.bankAccountName || !formData.bankAccountNumber || !formData.bankIfsc || !formData.bankName) {
+                return alert("Please fill in all bank account details.");
+            }
+        }
+        setStep((prev) => Math.min(prev + 1, 6));
     };
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
@@ -144,6 +162,17 @@ export default function SellerOnboarding() {
                     state: '',
                     pincode: '',
                 },
+                bankDetails: {
+                    accountName: formData.bankAccountName,
+                    accountNumber: formData.bankAccountNumber,
+                    ifsc: formData.bankIfsc,
+                    bankName: formData.bankName,
+                },
+                kycDetails: {
+                    documentType: 'pan_card',
+                    documentNumber: formData.registrationNumber,
+                    documentUrl: formData.kycDocUrl,
+                },
                 documents: {
                     businessRegistration: formData.businessDocUrl,
                     identityProof: formData.kycDocUrl
@@ -182,20 +211,21 @@ export default function SellerOnboarding() {
                 {/* Progress Stepper */}
                 <div className="flex items-center justify-between mb-12 relative">
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-border -z-10 rounded-full">
-                        <div className="h-full bg-accent rounded-full transition-all duration-500 ease-in-out" style={{ width: `${((step - 1) / 4) * 100}%` }} />
+                        <div className="h-full bg-accent rounded-full transition-all duration-500 ease-in-out" style={{ width: `${((step - 1) / 5) * 100}%` }} />
                     </div>
                     {[
                         { id: 1, label: "Business Details", icon: Building2 },
                         { id: 2, label: "Contact Info", icon: User },
                         { id: 3, label: "Document KYC", icon: FileText },
-                        { id: 4, label: "Verification", icon: CheckCircle2 },
-                        { id: 5, label: "Payment", icon: CreditCard }
+                        { id: 4, label: "Bank Account", icon: CreditCard },
+                        { id: 5, label: "Verification", icon: CheckCircle2 },
+                        { id: 6, label: "Payment", icon: CreditCard }
                     ].map((s) => (
                         <div key={s.id} className="flex flex-col items-center gap-2">
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors duration-500 ${step >= s.id ? 'bg-accent text-accent-foreground ring-4 ring-background' : 'bg-muted text-muted-foreground border-2 border-border'}`}>
                                 <s.icon className="h-5 w-5" />
                             </div>
-                            <span className={`text-xs font-bold uppercase tracking-wider hidden sm:block ${step >= s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider hidden sm:block ${step >= s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
                                 {s.label}
                             </span>
                         </div>
@@ -300,6 +330,34 @@ export default function SellerOnboarding() {
 
                         {step === 4 && (
                             <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                                <h2 className="text-2xl font-heading font-bold mb-6">Bank Account Details for Payouts</h2>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold">Account Holder Name</label>
+                                            <input type="text" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="Matching KYC Document" value={formData.bankAccountName} onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold">Bank Name</label>
+                                            <input type="text" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="HDFC, SBI, etc." value={formData.bankName} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold">Account Number</label>
+                                            <input type="password" placeholder="••••••••" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all font-mono" value={formData.bankAccountNumber} onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold">IFSC Code</label>
+                                            <input type="text" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all font-mono uppercase" placeholder="HDFC0001234" value={formData.bankIfsc} onChange={(e) => setFormData({ ...formData, bankIfsc: e.target.value })} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 5 && (
+                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
                                 <div className="text-center mb-8">
                                     <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                                         <CheckCircle2 className="h-10 w-10 text-emerald-500" />
@@ -314,8 +372,8 @@ export default function SellerOnboarding() {
                                     <p>Selling counterfeit goods results in immediate account termination and legal action.</p>
                                     <h4 className="font-bold">3. Returns and Refunds</h4>
                                     <p>Sellers must adhere to platform return and refund policies.</p>
-                                    <h4 className="font-bold">4. Fees</h4>
-                                    <p>One-time registration fee of ₹10. Platform commission: 8% per transaction.</p>
+                                    <h4 className="font-bold">4. Fees & Payouts</h4>
+                                    <p>One-time registration fee of ₹10. Platform commission: 10% per transaction. Payouts disbursed directly to verified bank accounts.</p>
                                 </div>
                                 <label className="flex items-start gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted transition-colors">
                                     <input type="checkbox" className="mt-1 w-5 h-5 text-accent rounded border-gray-300 focus:ring-accent" checked={formData.agreeToTerms} onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })} />
@@ -327,7 +385,7 @@ export default function SellerOnboarding() {
                             </div>
                         )}
 
-                        {step === 5 && !isSuccess && (
+                        {step === 6 && !isSuccess && (
                             <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
                                 <div className="text-center mb-6">
                                     <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -365,19 +423,19 @@ export default function SellerOnboarding() {
                         <div className="mt-8 pt-8 border-t border-border/50 flex items-center justify-between">
                             <button onClick={prevStep} disabled={step === 1} className={`px-6 py-3 font-semibold rounded-xl transition-all ${step === 1 ? 'opacity-0 pointer-events-none' : 'glass-panel hover:bg-muted text-foreground'}`}>Back</button>
 
-                            {step < 4 && (
+                            {step < 5 && (
                                 <button onClick={nextStep} className="px-8 py-3 bg-foreground text-background font-bold rounded-xl flex items-center gap-2 hover:bg-primary transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
                                     Continue <ChevronRight className="h-4 w-4" />
                                 </button>
                             )}
 
-                            {step === 4 && (
+                            {step === 5 && (
                                 <button disabled={!formData.agreeToTerms} onClick={nextStep} className={`px-8 py-3 font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg ${formData.agreeToTerms ? 'bg-accent text-accent-foreground hover:bg-accent/90 hover:-translate-y-0.5' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}>
                                     Proceed to Payment <ChevronRight className="h-4 w-4" />
                                 </button>
                             )}
 
-                            {step === 5 && (
+                            {step === 6 && (
                                 <button onClick={handleSubmit} disabled={submitting} className="px-8 py-3 bg-accent text-accent-foreground font-bold rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50">
                                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                                     {submitting ? 'Submitting...' : 'Pay ₹10 & Submit'}

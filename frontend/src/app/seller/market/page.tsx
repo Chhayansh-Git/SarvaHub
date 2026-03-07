@@ -1,168 +1,234 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
-import { Search, TrendingUp, Star, Filter, Loader2, ArrowUpRight, BarChart3, ShoppingCart } from "lucide-react";
+import { FilterSidebar } from "@/components/search/FilterSidebar";
+import { SellerProductGrid, type SellerProductCard } from "@/components/seller/market/SellerProductGrid";
+import { SlidersHorizontal } from "lucide-react";
 import { api } from "@/lib/api";
+import { useHistoryStore } from "@/store/historyStore";
 
-type MarketProduct = {
-    _id: string;
-    name: string;
-    description: string;
-    price: number;
-    images: { url: string; alt?: string }[];
-    category: string;
-    seller: { _id: string; name: string; companyName: string };
-    metrics: {
-        unitsSold: number;
-        reviewCount: number;
-        averageRating: number;
-        conversionRate: string;
+// ─── Types ──────────────────────────────────────────────────────────
+
+interface ProductsApiResponse {
+    data: SellerProductCard[];
+    pagination: {
+        page: number;
+        limit: number;
+        totalItems: number;
+        totalPages: number;
+        hasNextPage: boolean;
     };
-};
+    filters?: {
+        availableCategories?: string[];
+        availableBrands?: string[];
+        priceRange?: { min: number; max: number };
+    };
+}
 
-export default function MarketInsightsPage() {
+// ─── Search Content ─────────────────────────────────────────────────
+
+function MarketContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const [products, setProducts] = useState<MarketProduct[]>([]);
+    const { addSearchKeyword } = useHistoryStore();
+
+    const query = searchParams.get("q") || "";
+    const imageRef = searchParams.get("imageRef") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sortParam = searchParams.get("sort") || "recommended";
+    const pageParam = parseInt(searchParams.get("page") || "1", 10);
+
+    const [products, setProducts] = useState<SellerProductCard[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || "");
-    const [sortBy, setSortBy] = useState('sales'); // sales, rating, new
+    const [totalItems, setTotalItems] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [filters, setFilters] = useState<ProductsApiResponse['filters']>();
+    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [selectedRating, setSelectedRating] = useState<number | undefined>();
+    const [maxPrice, setMaxPrice] = useState<number | undefined>();
+
+    // Track search keywords
+    useEffect(() => {
+        if (query) addSearchKeyword(query);
+    }, [query, addSearchKeyword]);
+
+    // Build URL and fetch
+    const fetchProducts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (query) params.set("q", query);
+            if (imageRef) params.set("imageRef", imageRef);
+            if (categoryParam) params.set("category", categoryParam);
+            if (selectedBrands.length > 0) params.set("brand", selectedBrands.join(","));
+            if (selectedRating) params.set("rating", String(selectedRating));
+            if (maxPrice) params.set("maxPrice", String(maxPrice));
+            if (sortParam && sortParam !== "recommended") params.set("sort", sortParam);
+            params.set("page", String(pageParam));
+            params.set("limit", "20");
+
+            console.log("Fetching products with params:", params.toString());
+            const data = await api.get<ProductsApiResponse>(`/products?${params.toString()}`);
+            console.log("API Response:", data);
+
+            setProducts(data.data || []);
+            setTotalItems(data.pagination?.totalItems || 0);
+            setTotalPages(data.pagination?.totalPages || 1);
+            if (data.filters) setFilters(data.filters);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+            setProducts([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [query, imageRef, categoryParam, sortParam, pageParam, selectedBrands, selectedRating, maxPrice]);
 
     useEffect(() => {
-        const fetchMarketData = async () => {
-            setIsLoading(true);
-            try {
-                const query = searchParams.get('q');
-                const url = query ? `/seller/market?query=${encodeURIComponent(query)}` : `/seller/market`;
-                const res = await api.get<{ products: MarketProduct[] }>(url);
+        fetchProducts();
+    }, [fetchProducts]);
 
-                let sorted = res.products || [];
-                if (sortBy === 'sales') sorted.sort((a, b) => b.metrics.unitsSold - a.metrics.unitsSold);
-                if (sortBy === 'rating') sorted.sort((a, b) => b.metrics.averageRating - a.metrics.averageRating);
-
-                setProducts(sorted);
-            } catch (err) {
-                console.error("Failed to fetch market insights:", err);
-            } finally {
-                setIsLoading(false);
+    // URL update helper
+    const updateSearchParams = (updates: Record<string, string | null>) => {
+        const params = new URLSearchParams(searchParams.toString());
+        for (const [key, value] of Object.entries(updates)) {
+            if (value === null || value === "") {
+                params.delete(key);
+            } else {
+                params.set(key, value);
             }
-        };
+        }
+        // Reset to page 1 on filter changes (but not when updating page itself)
+        if (!updates.page && Object.keys(updates).some(k => k !== 'page')) {
+            params.set("page", "1");
+        }
+        router.push(`/seller/market?${params.toString()}`);
+    };
 
-        fetchMarketData();
-    }, [searchParams, sortBy]);
+    // Sync URL params with local state on mount and when URL changes
+    useEffect(() => {
+        // Update brand state from URL if present
+        if (categoryParam) {
+            // Category is handled separately
+        }
+        // This will refetch with updated URL params
+    }, [categoryParam]);
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        router.push(`/seller/market${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''}`);
+    const clearSearchAndGoHome = () => {
+        router.push('/seller/dashboard');
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24">
-            {/* Header & Search */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="max-w-xl w-full">
-                    <div className="flex items-center gap-2 text-accent mb-2">
-                        <BarChart3 className="w-5 h-5" />
-                        <span className="font-bold tracking-widest uppercase text-xs">Market Intelligence</span>
-                    </div>
-                    <h1 className="text-4xl font-heading font-black tracking-tight mb-2">Global Catalog Insights</h1>
-                    <p className="text-muted-foreground">Analyze top-performing products across the entire platform and discover B2B opportunities.</p>
-                </div>
+        <div className="pb-16 pt-6">
+            {/* Search Header */}
+            <div className="bg-muted/30 border border-border rounded-3xl mb-8 overflow-hidden">
+                <div className="px-6 py-8">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight mb-2">
+                                {imageRef ? "Visual Search Results" : query ? `Market Results for "${query}"` : "Global Marketplace"}
+                            </h1>
+                            <p className="text-muted-foreground">Analyze top-performing products across the entire platform and discover B2B opportunities.</p>
+                            {imageRef && (
+                                <div className="flex flex-col md:flex-row md:items-center gap-4 mt-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-16 w-16 rounded-xl bg-accent overflow-hidden relative border-2 border-accent">
+                                            {/* Instead of a static unsplash image, ideally show the uploaded image here */}
+                                            {/* Since we don't have the blob url here directly, this acts as a placeholder visual */}
+                                            <Image src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150&q=80" alt="Reference" fill className="object-cover opacity-80" />
+                                        </div>
+                                        <p className="text-muted-foreground text-sm">Showing items visually similar to your upload.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => updateSearchParams({ imageRef: null, q: null, category: null })}
+                                        className="text-sm font-medium text-accent hover:underline self-start md:self-auto"
+                                    >
+                                        Clear visual search
+                                    </button>
+                                </div>
+                            )}
+                        </div>
 
-                <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                    <button
-                        onClick={() => setSortBy('sales')}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${sortBy === 'sales' ? 'bg-foreground text-background' : 'glass-panel hover:bg-accent/10'}`}
-                    >
-                        Top Sellers
-                    </button>
-                    <button
-                        onClick={() => setSortBy('rating')}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${sortBy === 'rating' ? 'bg-foreground text-background' : 'glass-panel hover:bg-accent/10'}`}
-                    >
-                        Highest Rated
-                    </button>
-                    <button className="px-4 py-2 glass-panel rounded-xl text-sm font-bold hover:bg-accent/10 transition-colors flex items-center gap-2">
-                        <Filter className="w-4 h-4" /> Filters
-                    </button>
+                        {/* Mobile Filter Toggle */}
+                        <button className="lg:hidden flex items-center justify-center gap-2 w-full md:w-auto glass-panel px-6 py-3 rounded-full font-medium hover:bg-accent hover:text-accent-foreground transition-all">
+                            <SlidersHorizontal className="h-4 w-4" />
+                            Filters & Sort
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Dedicated Search Bar */}
-            <form onSubmit={handleSearch} className="relative max-w-2xl">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search market for products, categories, or sellers..."
-                    className="w-full pl-12 pr-4 py-4 rounded-2xl glass-panel border border-border focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all font-medium"
-                />
-            </form>
+            {/* Main Content Area */}
+            <div className="flex flex-col lg:flex-row gap-8">
+                {/* Sidebar */}
+                <aside className="hidden lg:block w-72 flex-shrink-0">
+                    <FilterSidebar
+                        filters={filters}
+                        selectedCategory={categoryParam || "All Products"}
+                        selectedBrands={selectedBrands}
+                        selectedRating={selectedRating}
+                        maxPrice={maxPrice}
+                        onCategoryChange={(cat) => updateSearchParams({ category: cat || null })}
+                        onBrandToggle={(brand) => {
+                            setSelectedBrands(prev =>
+                                prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
+                            );
+                        }}
+                        onRatingChange={(r) => setSelectedRating(r ?? undefined)}
+                        onPriceChange={(p) => setMaxPrice(p)}
+                        onClearAll={() => {
+                            setSelectedBrands([]);
+                            setSelectedRating(undefined);
+                            setMaxPrice(undefined);
+                            updateSearchParams({ category: null, sort: null, q: null });
+                        }}
+                    />
+                </aside>
 
-            {/* Data Grid */}
-            {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-10 h-10 text-accent animate-spin" />
-                </div>
-            ) : products.length === 0 ? (
-                <div className="text-center py-20 glass-panel rounded-3xl border-border/50 border border-dashed">
-                    <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <h3 className="text-xl font-bold mb-2">No market data found</h3>
-                    <p className="text-muted-foreground max-w-sm mx-auto">We couldn't find any products matching your market query.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {products.map((product) => (
-                        <div key={product._id} className="glass-panel rounded-3xl p-5 border border-border/50 flex flex-col group relative overflow-hidden transition-all hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5">
-                            <div className="flex gap-4 mb-4 relative z-10">
-                                <div className="w-24 h-24 rounded-2xl bg-muted overflow-hidden relative shrink-0">
-                                    <Image
-                                        src={product.images?.[0]?.url || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80'}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                    />
-                                </div>
-                                <div>
-                                    <div className="text-xs font-bold text-accent mb-1">{product.category}</div>
-                                    <h3 className="font-bold text-lg leading-tight line-clamp-2 mb-1 group-hover:text-accent transition-colors">{product.name}</h3>
-                                    <div className="text-sm text-muted-foreground line-clamp-1">by {product.seller?.companyName || product.seller?.name || 'Unknown Seller'}</div>
-                                </div>
-                            </div>
+                {/* Product Grid */}
+                <main className="flex-1">
+                    <SellerProductGrid
+                        products={products}
+                        isLoading={isLoading}
+                        totalItems={totalItems}
+                        sort={sortParam}
+                        onSortChange={(sort) => updateSearchParams({ sort })}
+                        onClearSearch={clearSearchAndGoHome}
+                    />
 
-                            <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
-                                <div className="bg-background/50 rounded-xl p-3 border border-border/50">
-                                    <div className="text-xs text-muted-foreground font-medium mb-1 flex items-center gap-1.5">
-                                        <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> Total Volume
-                                    </div>
-                                    <div className="font-mono font-bold text-lg">{product.metrics.unitsSold.toLocaleString()}</div>
-                                </div>
-                                <div className="bg-background/50 rounded-xl p-3 border border-border/50">
-                                    <div className="text-xs text-muted-foreground font-medium mb-1 flex items-center gap-1.5">
-                                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Avg Rating
-                                    </div>
-                                    <div className="font-mono font-bold text-lg flex items-end gap-1">
-                                        {product.metrics.averageRating}
-                                        <span className="text-xs text-muted-foreground font-sans tracking-normal pb-0.5">({product.metrics.reviewCount})</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Link href={`/seller/market/${product._id}`} className="mt-auto relative z-10">
-                                <button className="w-full py-3 bg-muted hover:bg-accent hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 group/btn">
-                                    <ShoppingCart className="w-4 h-4" />
-                                    View Options & Order
-                                    <ArrowUpRight className="w-4 h-4 opacity-50 group-hover/btn:opacity-100 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-all" />
-                                </button>
-                            </Link>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center gap-2 mt-12">
+                            {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+                                const page = i + 1;
+                                return (
+                                    <button
+                                        key={page}
+                                        onClick={() => updateSearchParams({ page: String(page) })}
+                                        className={`w-10 h-10 rounded-full text-sm font-bold transition-colors ${page === pageParam
+                                            ? 'bg-accent text-accent-foreground'
+                                            : 'glass-panel hover:bg-muted'
+                                            }`}
+                                    >
+                                        {page}
+                                    </button>
+                                );
+                            })}
                         </div>
-                    ))}
-                </div>
-            )}
+                    )}
+                </main>
+            </div>
         </div>
+    );
+}
+
+// ─── Page Wrapper ───────────────────────────────────────────────────
+
+export default function MarketInsightsPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen pt-12 pb-16"><div className="animate-pulse h-12 w-64 bg-muted rounded mb-8"></div></div>}>
+            <MarketContent />
+        </Suspense>
     );
 }

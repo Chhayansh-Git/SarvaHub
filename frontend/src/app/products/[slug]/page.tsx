@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { Play, ShoppingBag, Heart, ShieldCheck, Truck, RotateCcw, Shield, Check } from "lucide-react";
+import Link from "next/link";
+import { Play, ShoppingBag, Heart, ShieldCheck, Truck, RotateCcw, Shield, Check, Bell } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
 import { ShareProduct } from "@/components/product/ShareProduct";
 import { ReviewSection } from "@/components/product/ReviewSection";
 import { useHistoryStore } from "@/store/historyStore";
 import { useCartStore } from "@/store/cartStore";
 import { api } from "@/lib/api";
+import { ContactSellerDialog } from "@/components/shared/ContactSellerDialog";
 
 // Fallback product data for when backend is unavailable
 const FALLBACK_PRODUCT = {
@@ -91,7 +93,9 @@ export default function ProductDetail() {
                         batch: data.authenticity?.batchId || data.authenticity?.batch || "N/A",
                         origin: data.authenticity?.origin || "India",
                     },
-                    seller: data.seller || null,
+                    seller: typeof data.seller === 'object' && data.seller
+                        ? { ...data.seller, id: data.seller._id || data.seller.id }
+                        : (data.seller ? { id: data.seller, name: 'Seller', _id: data.seller } : FALLBACK_PRODUCT.seller),
                     returnPolicy: data.returnPolicy ? {
                         type: data.returnPolicy.type || "Conditional Return",
                         window: data.returnPolicy.windowDays ? `${data.returnPolicy.windowDays} Days` : "7 Days",
@@ -177,6 +181,16 @@ export default function ProductDetail() {
         );
     }
 
+    if (!product) {
+        return (
+            <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold mb-2">Product not found</h1>
+                    <p className="text-muted-foreground">This product may have been removed or doesn&apos;t exist.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen pt-24 pb-16">
@@ -247,7 +261,17 @@ export default function ProductDetail() {
                         <div className="mb-8">
                             <span className="text-sm font-bold text-accent uppercase tracking-wider mb-2 block">{product.brand}</span>
                             <h1 className="text-4xl md:text-5xl font-heading font-black tracking-tight mb-4">{product.name}</h1>
-                            <p className="text-3xl font-mono font-bold">₹{product.price.toLocaleString('en-IN')}</p>
+                            <div className="flex items-center gap-4 mb-4">
+                                <p className="text-3xl font-mono font-bold">₹{product.price.toLocaleString('en-IN')}</p>
+                                {(product.originalPrice > product.price || product.discount > 0) && (
+                                    <>
+                                        <p className="text-xl font-mono line-through text-muted-foreground">₹{(product.originalPrice || 0).toLocaleString('en-IN')}</p>
+                                        <span className="text-sm font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">
+                                            {product.discount || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                                        </span>
+                                    </>
+                                )}
+                            </div>
                         </div>
 
                         {/* Description */}
@@ -281,19 +305,36 @@ export default function ProductDetail() {
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                            <button
-                                onClick={handleAddToBag}
-                                className="flex-1 py-4 px-8 bg-foreground text-background font-bold text-lg rounded-full flex items-center justify-center gap-3 hover:bg-primary transition-colors hover:scale-[1.02] active:scale-[0.98] shadow-xl"
-                            >
-                                <ShoppingBag className="h-5 w-5" />
-                                Add to Bag
-                            </button>
-                            <button
-                                onClick={handleWishlist}
-                                className="py-4 px-6 glass-panel border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors hover:text-accent group"
-                            >
-                                <Heart className="h-6 w-6 group-hover:fill-accent transition-colors" />
-                            </button>
+                            {(product.stock ?? 1) < 1 ? (
+                                <>
+                                    <button
+                                        onClick={() => alert('We will notify you when this product is back in stock!')}
+                                        className="flex-1 py-4 px-8 bg-amber-500 text-black font-bold text-lg rounded-full flex items-center justify-center gap-3 hover:bg-amber-400 transition-colors hover:scale-[1.02] active:scale-[0.98] shadow-xl"
+                                    >
+                                        <Bell className="h-5 w-5" />
+                                        Notify Me When Available
+                                    </button>
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-500 text-sm font-semibold">
+                                        Currently Unavailable
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={handleAddToBag}
+                                        className="flex-1 py-4 px-8 bg-foreground text-background font-bold text-lg rounded-full flex items-center justify-center gap-3 hover:bg-primary transition-colors hover:scale-[1.02] active:scale-[0.98] shadow-xl"
+                                    >
+                                        <ShoppingBag className="h-5 w-5" />
+                                        Add to Bag
+                                    </button>
+                                    <button
+                                        onClick={handleWishlist}
+                                        className="py-4 px-6 glass-panel border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors hover:text-accent group"
+                                    >
+                                        <Heart className="h-6 w-6 group-hover:fill-accent transition-colors" />
+                                    </button>
+                                </>
+                            )}
                         </div>
 
                         {/* Share via QR & Social Layer */}
@@ -318,8 +359,8 @@ export default function ProductDetail() {
                             <div className="flex items-start gap-4 p-4 glass-panel rounded-2xl border-glass-border">
                                 <RotateCcw className="h-6 w-6 text-accent shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="font-semibold text-sm">Seller Return Policy: {product.returnPolicy.window}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">{product.returnPolicy.type}</p>
+                                    <p className="font-semibold text-sm">Seller Return Policy: {product.returnPolicy?.window || 'N/A'}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{product.returnPolicy?.type || 'Standard'}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4 p-4 glass-panel rounded-2xl border-glass-border">
@@ -331,49 +372,58 @@ export default function ProductDetail() {
                             </div>
                         </div>
 
-                        {/* Detailed Seller Profile (New addition) */}
-                        <div className="mb-12 p-6 glass-panel-light rounded-2xl border-border/50 relative overflow-hidden group">
-                            {/* Subtle background decoration */}
-                            <div className="absolute -right-12 -top-12 w-40 h-40 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
+                        {/* Detailed Seller Profile */}
+                        {product.seller && (
+                            <div className="mb-12 p-6 glass-panel-light rounded-2xl border-border/50 relative overflow-hidden group">
+                                {/* Subtle background decoration */}
+                                <div className="absolute -right-12 -top-12 w-40 h-40 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
 
-                            <div className="flex items-center justify-between mb-4 relative z-10">
-                                <h4 className="font-heading font-bold text-lg">Sold by</h4>
-                                <div className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 px-2.5 py-1 rounded-full text-xs font-bold">
-                                    <ShieldCheck className="h-3.5 w-3.5" />
-                                    Verified Partner
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-4 relative z-10">
-                                <div className="w-14 h-14 rounded-full bg-muted border border-border overflow-hidden shrink-0 relative">
-                                    <Image src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=200" alt="Seller Storefront" fill className="object-cover" />
-                                </div>
-                                <div className="flex-1">
-                                    <h5 className="font-bold text-lg mb-1">{product.seller.name}</h5>
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground mb-3">
-                                        <span className="flex items-center gap-1 font-medium text-foreground">
-                                            <span className="text-yellow-500">★</span> {product.seller.rating} <span className="text-muted-foreground">({product.seller.reviewCount} reviews)</span>
-                                        </span>
-                                        <span>•</span>
-                                        <span>Since {product.seller.joinedYear}</span>
-                                        <span>•</span>
-                                        <span>Ships from {product.seller.location}</span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
-                                        {product.seller.description}
-                                    </p>
-
-                                    <div className="flex items-center gap-3">
-                                        <button className="text-sm font-semibold bg-foreground text-background px-4 py-2 rounded-lg hover:bg-primary transition-colors">
-                                            Visit Store
-                                        </button>
-                                        <button className="text-sm font-medium glass-panel px-4 py-2 rounded-lg hover:text-accent transition-colors">
-                                            Contact Seller
-                                        </button>
+                                <div className="flex items-center justify-between mb-4 relative z-10">
+                                    <h4 className="font-heading font-bold text-lg">Sold by</h4>
+                                    <div className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 px-2.5 py-1 rounded-full text-xs font-bold">
+                                        <ShieldCheck className="h-3.5 w-3.5" />
+                                        Verified Partner
                                     </div>
                                 </div>
+
+                                <div className="flex items-start gap-4 relative z-10">
+                                    <div className="w-14 h-14 rounded-full bg-muted border border-border overflow-hidden shrink-0 relative">
+                                        <Image src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=200" alt="Seller Storefront" fill className="object-cover" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h5 className="font-bold text-lg mb-1">
+                                            <Link href={`/shop/${product.seller.id || product.seller._id}`} className="hover:text-accent transition-colors hover:underline">
+                                                {product.seller.name}
+                                            </Link>
+                                        </h5>
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground mb-3">
+                                            <span className="flex items-center gap-1 font-medium text-foreground">
+                                                <span className="text-yellow-500">★</span> {product.seller.rating} <span className="text-muted-foreground">({product.seller.reviewCount} reviews)</span>
+                                            </span>
+                                            <span>•</span>
+                                            <span>Since {product.seller.joinedYear}</span>
+                                            <span>•</span>
+                                            <span>Ships from {product.seller.location}</span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+                                            {product.seller.description}
+                                        </p>
+
+                                        <div className="flex items-center gap-3">
+                                            <Link href={`/shop/${product.seller.id || product.seller._id}`} className="text-sm font-semibold bg-foreground text-background px-4 py-2 rounded-lg hover:bg-primary transition-colors">
+                                                Visit Store
+                                            </Link>
+                                            <ContactSellerDialog
+                                                sellerId={product.seller.id || product.seller._id}
+                                                sellerName={product.seller.name}
+                                                productId={product.id || product._id}
+                                                productName={product.name}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                     </div>
 
@@ -414,10 +464,10 @@ export default function ProductDetail() {
                                 </span>
                             </summary>
                             <div className="text-muted-foreground px-5 pb-5 text-sm space-y-3">
-                                {product.returnPolicy.eligible ? (
+                                {product.returnPolicy?.eligible ? (
                                     <>
                                         <div className="flex items-center gap-2 text-emerald-500 font-semibold mb-2">
-                                            <Check className="h-4 w-4" /> Eligible for {product.returnPolicy.window} Returns
+                                            <Check className="h-4 w-4" /> Eligible for {product.returnPolicy?.window} Returns
                                         </div>
                                         <p><strong>Policy Type:</strong> {product.returnPolicy.type}</p>
                                         <p><strong>Conditions set by Seller:</strong> {product.returnPolicy.conditions}</p>

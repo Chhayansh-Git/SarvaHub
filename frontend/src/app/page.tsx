@@ -121,63 +121,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products Validation */}
-      <section className="py-24 bg-card/50 border-y border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
-            <div className="max-w-2xl text-center md:text-left">
-              <div className="flex items-center gap-2 justify-center md:justify-start text-accent mb-4">
-                <ShieldCheck className="h-6 w-6" />
-                <span className="font-bold tracking-widest uppercase text-sm">Authenticity Guaranteed</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">Curated Featured Selection</h2>
-              <p className="text-muted-foreground text-lg">Every item in our featured collection has passed our rigorous 12-point provenance verification process.</p>
-            </div>
-            <Link href="/featured" className="px-6 py-3 bg-foreground text-background rounded-full font-medium hover:bg-foreground/90 transition-colors shrink-0">
-              Shop Featured List
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <Link href={`/products/${product.slug}`} key={product.slug || product.id} className="group glass-panel rounded-2xl overflow-hidden flex flex-col hover:border-accent/50 transition-colors border-border/50 shadow-sm hover:shadow-xl hover:shadow-black/5">
-                <div className="relative aspect-square overflow-hidden bg-muted">
-                  <Image
-                    src={product.images?.[0]?.url || product.images?.[0] || product.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'}
-                    alt={product.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute top-3 left-3 z-10 px-2.5 py-1.5 bg-black/70 backdrop-blur-md rounded border border-white/20 shadow-xl text-xs font-bold text-white flex items-center gap-1.5">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> AUTHENTIC
-                  </div>
-                </div>
-
-                <div className="p-5 flex flex-col flex-1">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">{product.brand}</p>
-                  <h3 className="font-semibold text-foreground text-lg mb-2 line-clamp-2 leading-tight group-hover:text-primary transition-colors">{product.name}</h3>
-
-                  <div className="flex items-center gap-1 mb-4">
-                    <Star className="h-4 w-4 fill-accent text-accent" />
-                    <span className="text-sm font-bold">{product.rating || 4.9}</span>
-                    <span className="text-sm text-muted-foreground">({product.reviewCount || product.reviews || 0})</span>
-                  </div>
-
-                  <div className="mt-auto flex items-end justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Price</p>
-                      <p className="text-xl font-bold font-heading">₹{(product.price || 0).toLocaleString('en-IN')}</p>
-                    </div>
-                    <div className="h-10 w-10 rounded-full bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                      <ArrowRight className="h-5 w-5" />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

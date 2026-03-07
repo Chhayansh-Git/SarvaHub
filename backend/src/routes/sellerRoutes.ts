@@ -4,6 +4,7 @@ import {
     submitOnboarding,
     createOnboardingPayment,
     confirmOnboardingPayment,
+    getSellerProducts,
     getSellerAnalytics,
     updateSellerSettings,
     getSellerCompliance,
@@ -28,6 +29,7 @@ router.post('/onboarding/pay', createOnboardingPayment);
 router.post('/onboarding/confirm', confirmOnboardingPayment);
 
 // Seller-only routes
+router.get('/products', authorize('seller'), getSellerProducts);
 router.get('/analytics', authorize('seller'), getSellerAnalytics);
 router.patch('/settings', authorize('seller'), updateSellerSettings);
 router.get('/compliance', authorize('seller'), getSellerCompliance);

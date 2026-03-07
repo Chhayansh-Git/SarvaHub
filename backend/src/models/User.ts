@@ -62,6 +62,27 @@ const ContactPersonSchema = new Schema(
     { _id: false }
 );
 
+// ─── Seller: KYC Details Sub-document ───────────────────────────────
+const KycDetailsSchema = new Schema(
+    {
+        documentType: {
+            type: String,
+            enum: ['gst_certificate', 'pan_card', 'incorporation_certificate', 'other'],
+        },
+        documentNumber: { type: String },
+        documentUrl: { type: String }, // Would store S3 URL or similar
+        verificationStatus: {
+            type: String,
+            enum: ['pending', 'verified', 'rejected'],
+            default: 'pending',
+        },
+        rejectionReason: { type: String, default: null },
+        submittedAt: { type: Date, default: Date.now },
+        verifiedAt: { type: Date, default: null },
+    },
+    { _id: false }
+);
+
 // ─── Seller: Compliance Metrics Sub-document ────────────────────────
 const ComplianceMetricsSchema = new Schema(
     {
@@ -108,6 +129,7 @@ const SellerProfileSchema = new Schema(
         panNumber: { type: String },
         registeredAddress: { type: RegisteredAddressSchema },
         bankDetails: { type: BankDetailsSchema },
+        kycDetails: { type: KycDetailsSchema },
         categories: [{ type: String }],
         brandAuthorization: [{ type: String }],
         subscriptionTier: {

@@ -23,6 +23,7 @@ export function Navbar() {
     const [mounted, setMounted] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
     const pathname = usePathname();
     const { isAuthenticated, openAuthModal } = useUserStore();
     const itemCount = useCartStore(state => state.itemCount);
@@ -36,12 +37,14 @@ export function Navbar() {
         // Fetch categories
         const loadCategories = async () => {
             try {
-                const data = await api.get<{ categories: Category[] }>('/categories');
-                setCategories(data.categories || []);
+                const data = await api.get<any>('/categories');
+                const fetchedCategories = Array.isArray(data) ? data : data.categories || [];
+                setCategories(fetchedCategories);
             } catch (error) {
                 console.error('Failed to load categories:', error);
-                // Fallback to empty array if fetch fails
                 setCategories([]);
+            } finally {
+                setIsLoadingCategories(false);
             }
         };
         loadCategories();
@@ -71,24 +74,35 @@ export function Navbar() {
                                 Categories
                             </Link>
                             <div className="absolute top-[80px] left-[-20px] w-56 bg-white dark:bg-zinc-900 border border-border rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 p-2 flex flex-col z-[100]">
-                                {categories.length > 0 ? (
+                                {isLoadingCategories ? (
+                                    <div className="px-4 py-2.5 text-sm text-muted-foreground flex items-center gap-2">
+                                        <div className="h-4 w-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                                        Loading...
+                                    </div>
+                                ) : categories.length > 0 ? (
                                     categories.map((category) => (
                                         <Link
                                             key={category.id || category._id || category.slug}
-                                            href={`/search?category=${encodeURIComponent(category.name)}`}
+                                            href={`/category/${category.slug}`}
                                             className="px-4 py-2.5 text-sm hover:bg-accent/10 rounded-lg hover:text-accent font-medium transition-colors"
                                         >
                                             {category.name}
                                         </Link>
                                     ))
                                 ) : (
-                                    <div className="px-4 py-2.5 text-sm text-muted-foreground">Loading categories...</div>
+                                    <div className="px-4 py-2.5 text-sm text-muted-foreground">No categories found</div>
                                 )}
                             </div>
                         </div>
-                        <Link href="/account/orders" className="text-muted-foreground hover:text-foreground transition-colors">
-                            My Orders
-                        </Link>
+                        {isAuthenticated ? (
+                            <Link href="/account/orders" className="text-muted-foreground hover:text-foreground transition-colors">
+                                My Orders
+                            </Link>
+                        ) : (
+                            <button onClick={() => openAuthModal('login')} className="text-muted-foreground hover:text-foreground transition-colors">
+                                My Orders
+                            </button>
+                        )}
                     </nav>
 
                     {/* Omni-Search Bar (Desktop) */}

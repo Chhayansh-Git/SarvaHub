@@ -170,6 +170,18 @@ export async function getSellerStats(req: Request, res: Response, next: NextFunc
     }
 }
 
+// GET /api/v1/orders/returns — get current user's returns
+export async function getUserReturns(req: Request, res: Response, next: NextFunction) {
+    try {
+        const returns = await ReturnRequest.find({ user: req.user!.id })
+            .populate('order', 'itemCount total createdAt')
+            .sort({ createdAt: -1 });
+        res.json({ returns });
+    } catch (err) {
+        next(err);
+    }
+}
+
 // GET /api/v1/seller/returns — seller's return requests
 export async function getSellerReturns(req: Request, res: Response, next: NextFunction) {
     try {
@@ -248,28 +260,30 @@ export async function getMarketInsights(req: Request, res: Response, next: NextF
             .sort({ createdAt: -1 }) // Default sort
             .lean();
 
-        // For deep insights, we need to artificially inject mock sales/rating data 
-        // if no real orders/reviews exist for the demo
+        // Enrich products with real metrics from DB
         const enrichedProducts = await Promise.all(products.map(async (p: any) => {
-            const orders = await Order.countDocuments({ "items.productId": p._id });
+            // Real units sold: sum quantities from all orders containing this product
+            const salesAgg = await Order.aggregate([
+                { $unwind: '$items' },
+                { $match: { 'items.productId': p._id } },
+                { $group: { _id: null, totalSold: { $sum: '$items.quantity' } } }
+            ]);
+            const unitsSold = salesAgg[0]?.totalSold || p.totalSold || 0;
+
+            // Real review metrics
             const reviewAgg = await Review.aggregate([
                 { $match: { product: p._id } },
-                { $group: { _id: null, avgRating: { $avg: "$rating" }, count: { $sum: 1 } } }
+                { $group: { _id: null, avgRating: { $avg: '$rating' }, count: { $sum: 1 } } }
             ]);
-
             const stats = reviewAgg[0] || { avgRating: 0, count: 0 };
-
-            // To make market insights useful even on a fresh DB, inject sensible defaults if 0
-            const unitsSold = orders > 0 ? orders * Math.floor(Math.random() * 3 + 1) : Math.floor(Math.random() * 500);
-            const avgRating = stats.avgRating > 0 ? stats.avgRating : (Math.random() * 2 + 3).toFixed(1); // 3.0 - 5.0
 
             return {
                 ...p,
                 metrics: {
                     unitsSold,
-                    reviewCount: stats.count || Math.floor(Math.random() * 100),
-                    averageRating: Number(avgRating),
-                    conversionRate: `${(Math.random() * 5 + 1).toFixed(1)}%`
+                    reviewCount: stats.count,
+                    averageRating: Number((stats.avgRating || 0).toFixed(1)),
+                    conversionRate: '0%' // Requires analytics tracking to compute; placeholder
                 }
             };
         }));
@@ -284,7 +298,14 @@ export async function getMarketInsights(req: Request, res: Response, next: NextF
 export async function getMarketInsightProduct(req: Request, res: Response, next: NextFunction) {
     try {
         const { Product } = await import('../models/Product');
-        const product = await Product.findById(req.params.id)
+        const query = {
+            $or: [
+                { _id: req.params.id },
+                { slug: req.params.id }
+            ]
+        };
+
+        const product = await Product.findOne(query)
             .populate('seller', 'name email companyName sellerProfile')
             .lean();
 
@@ -292,28 +313,132 @@ export async function getMarketInsightProduct(req: Request, res: Response, next:
             return next(new AppError(404, 'NOT_FOUND', 'Product not found in market catalog.'));
         }
 
-        // Mock historical 6-month sales trend for the chart
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        const currentSales = Math.floor(Math.random() * 1000) + 200;
-        const trend = months.map(m => ({
-            month: m,
-            sales: Math.max(0, currentSales + (Math.floor(Math.random() * 400) - 200))
-        }));
+        // Real historical 6-month sales trend from Orders
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const monthlySales = await Order.aggregate([
+            { $unwind: '$items' },
+            { $match: { 'items.productId': (product as any)._id, createdAt: { $gte: sixMonthsAgo } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+                    sales: { $sum: '$items.quantity' }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Build a full 6-month array with month labels, backfilling zeros
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const historicalTrend: { month: string; sales: number }[] = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const found = monthlySales.find((m: any) => m._id === key);
+            historicalTrend.push({ month: monthNames[d.getMonth()], sales: found?.sales || 0 });
+        }
+
+        // Real total units sold
+        const totalSalesAgg = await Order.aggregate([
+            { $unwind: '$items' },
+            { $match: { 'items.productId': (product as any)._id } },
+            { $group: { _id: null, totalSold: { $sum: '$items.quantity' } } }
+        ]);
+        const unitsSold = totalSalesAgg[0]?.totalSold || (product as any).totalSold || 0;
+
+        // Real review metrics
+        const reviewAgg = await Review.aggregate([
+            { $match: { product: (product as any)._id } },
+            { $group: { _id: null, avgRating: { $avg: '$rating' }, count: { $sum: 1 } } }
+        ]);
+        const reviewStats = reviewAgg[0] || { avgRating: 0, count: 0 };
+
+        // Deterministic competitor pricing based on actual product price
+        const price = (product as any).price || 0;
+        const competitorPricing = {
+            low: Math.floor(price * 0.85),
+            high: Math.floor(price * 1.25),
+            average: Math.floor(price * 1.05)
+        };
 
         res.json({
             product,
             analytics: {
-                unitsSold: currentSales * 6,
-                averageRating: (Math.random() * 1.5 + 3.5).toFixed(1),
-                reviewCount: Math.floor(Math.random() * 200) + 10,
-                historicalTrend: trend,
-                competitorPricing: {
-                    low: Math.floor((product.price || 0) * 0.8),
-                    high: Math.floor((product.price || 0) * 1.3),
-                    average: Math.floor((product.price || 0) * 1.05)
-                }
+                unitsSold,
+                averageRating: (reviewStats.avgRating || 0).toFixed(1),
+                reviewCount: reviewStats.count,
+                historicalTrend,
+                competitorPricing
             }
         });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// POST /api/v1/orders/b2b — authorize a B2B purchase using vendor credit/funds
+export async function createB2bOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { Product } = await import('../models/Product');
+        const { productId, quantity, shippingAddress } = req.body;
+
+        if (!productId || !quantity || quantity < 1) {
+            return next(new AppError(400, 'BAD_REQUEST', 'Valid product ID and quantity are required.'));
+        }
+
+        const product = await Product.findById(productId);
+        if (!product) return next(new AppError(404, 'NOT_FOUND', 'Product not found.'));
+
+        if ((product.stock ?? 0) < quantity) {
+            return next(new AppError(400, 'BAD_REQUEST', 'Insufficient stock available.'));
+        }
+
+        const price = product.price || 0;
+        const subtotal = price * quantity;
+
+        // Amazon-style commission: 10% platform fee
+        const platformFee = Math.round(subtotal * 0.10);
+        const sellerEarnings = subtotal - platformFee;
+
+        const order = await Order.create({
+            user: req.user!.id,
+            seller: [String(product.seller)],
+            status: 'confirmed',
+            statusLabel: 'Confirmed',
+            items: [{
+                productId: product.id,
+                name: product.name,
+                price: price,
+                quantity: quantity,
+                image: typeof product.images?.[0] === 'string' ? product.images[0] : (product.images?.[0] as any)?.url || '',
+                sku: product.sku || '',
+            }],
+            subtotal,
+            shipping: 0,
+            tax: 0,
+            total: subtotal,
+            platformFee,
+            sellerEarnings,
+            payoutStatus: 'pending',
+            shippingAddress: shippingAddress || {
+                line1: 'B2B Default Warehouse',
+                city: 'Local',
+                state: 'State',
+                pincode: '000000',
+            },
+            paymentMethod: {
+                type: 'netbanking',
+                brand: 'B2B Credit Line'
+            }
+        });
+
+        // Deduct stock immediately
+        product.stock = Math.max(0, (product.stock ?? 0) - quantity);
+        await product.save();
+
+        res.status(201).json({ message: 'B2B order authorized successfully.', order });
     } catch (err) {
         next(err);
     }

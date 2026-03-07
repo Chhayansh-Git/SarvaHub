@@ -228,13 +228,13 @@ async function seed() {
         await Order.create({
             user: consumer._id,
             items: [{
-                product: sampleProduct.slug ? await Product.findOne({ slug: sampleProduct.slug }).then(p => p?._id) : undefined,
+                productId: sampleProduct.slug ? await Product.findOne({ slug: sampleProduct.slug }).then(p => p?._id) : undefined,
                 name: sampleProduct.name,
                 price: sampleProduct.price,
                 quantity: 1,
                 image: sampleProduct.images[0]?.url || '',
             }],
-            shipping: {
+            shippingAddress: {
                 fullName: 'Arjun Mehta',
                 phone: '+919123456789',
                 addressLine1: '42, Marine Drive',
@@ -244,15 +244,15 @@ async function seed() {
                 pincode: '400002',
                 country: 'India',
             },
-            payment: {
-                method: 'card',
-                status: 'paid',
-                transactionId: 'pi_demo_' + Date.now(),
-                paidAt: now,
+            paymentMethod: {
+                type: 'card',
+                last4: '4242',
+                brand: 'Visa',
+                upiId: null
             },
             subtotal: sampleProduct.price,
             tax: Math.round(sampleProduct.price * 0.18),
-            shippingCost: 0,
+            shipping: 0,
             total: Math.round(sampleProduct.price * 1.18),
             status: 'delivered',
             deliveredAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),

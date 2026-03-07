@@ -65,7 +65,12 @@ export async function buildProductFilterPipeline(query: ProductQueryParams) {
             // Build the filter for $vectorSearch (subset of matchStage fields)
             const vectorFilter: Record<string, any> = { status: 'active' };
             if (query.category) {
-                const catDoc = await Category.findOne({ name: { $regex: `^${escapeRegex(query.category)}$`, $options: 'i' } }).lean();
+                const catDoc = await Category.findOne({
+                    $or: [
+                        { slug: query.category },
+                        { name: { $regex: `^${escapeRegex(query.category)}$`, $options: 'i' } }
+                    ]
+                }).lean();
                 vectorFilter.category = catDoc ? catDoc._id : query.category;
             }
             if (query.verified === true || query.verified === 'true') {
@@ -101,7 +106,12 @@ export async function buildProductFilterPipeline(query: ProductQueryParams) {
 
     // Category filter (resolve name → _id since products store category as an ID reference)
     if (query.category && !useVectorSearch) {
-        const cat = await Category.findOne({ name: { $regex: `^${escapeRegex(query.category)}$`, $options: 'i' } }).lean();
+        const cat = await Category.findOne({
+            $or: [
+                { slug: query.category },
+                { name: { $regex: `^${escapeRegex(query.category)}$`, $options: 'i' } }
+            ]
+        }).lean();
         if (cat) {
             matchStage.category = cat._id;
         } else {
@@ -170,6 +180,7 @@ export async function buildProductFilterPipeline(query: ProductQueryParams) {
         originalPrice: 1,
         rating: 1,
         reviewCount: 1,
+        stock: 1,
         image: { $arrayElemAt: ['$images.url', 0] },
         verified: '$authenticity.verified',
         category: 1,

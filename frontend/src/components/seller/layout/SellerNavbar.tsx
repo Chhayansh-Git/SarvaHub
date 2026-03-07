@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, User, Sun, Moon } from "lucide-react";
+import { Search, Bell, User, Sun, Moon, Store } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -60,6 +60,15 @@ export function SellerNavbar() {
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                    {/* Marketplace Link */}
+                    <Link
+                        href="/seller/market"
+                        className="hidden sm:flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent font-semibold rounded-full hover:bg-accent/20 transition-all text-sm"
+                    >
+                        <Store className="h-4 w-4" />
+                        Marketplace
+                    </Link>
+
                     {/* Theme Toggle */}
                     {mounted && (
                         <button

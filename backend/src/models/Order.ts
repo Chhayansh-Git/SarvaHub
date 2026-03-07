@@ -96,10 +96,13 @@ export interface IOrder {
             estimatedCompletionAt: Date | null;
         };
     }>;
-    subtotal: number;   // paisa
+    subtotal: number;    // paisa
     shipping: number;    // paisa
     tax: number;         // paisa
     total: number;       // paisa
+    platformFee: number; // paisa (Platform cut)
+    sellerEarnings: number; // paisa (Seller cut)
+    payoutStatus: 'pending' | 'processing' | 'paid';
     shippingAddress: Record<string, any>;
     paymentMethod: {
         type: string;
@@ -151,10 +154,17 @@ const OrderSchema = new Schema(
         },
         statusLabel: { type: String, default: 'Confirmed' },
         items: { type: [OrderItemSchema], default: [] },
-        subtotal: { type: Number, required: true },     // paisa
+        subtotal: { type: Number, required: true },      // paisa
         shipping: { type: Number, default: 0 },          // paisa
         tax: { type: Number, default: 0 },               // paisa
         total: { type: Number, required: true },         // paisa
+        platformFee: { type: Number, default: 0 },       // paisa
+        sellerEarnings: { type: Number, default: 0 },    // paisa
+        payoutStatus: {
+            type: String,
+            enum: ['pending', 'processing', 'paid'],
+            default: 'pending'
+        },
         shippingAddress: { type: ShippingAddressSchema, required: true },
         paymentMethod: { type: OrderPaymentMethodSchema, required: true },
         tracking: { type: TrackingSchema, default: () => ({}) },

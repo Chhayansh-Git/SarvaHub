@@ -24,6 +24,7 @@ import sellerRoutes from './routes/sellerRoutes';
 import paymentMethodRoutes from './routes/paymentMethodRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import adminRoutes from './routes/adminRoutes';
+import shopRoutes from './routes/shopRoutes';
 
 // ─── Create Express App ─────────────────────────────────────────────
 const app = express();
@@ -89,6 +90,7 @@ app.use('/api/v1/seller', sellerRoutes);
 app.use('/api/v1/payments', paymentMethodRoutes);
 app.use('/api/v1/upload', uploadLimiter, uploadRoutes);
 app.use('/api/v1/admin', adminLimiter, adminRoutes);
+app.use('/api/v1/shop', shopRoutes);
 
 // ─── 404 Handler ────────────────────────────────────────────────────
 app.use((_req: Request, _res: Response, next: NextFunction) => {

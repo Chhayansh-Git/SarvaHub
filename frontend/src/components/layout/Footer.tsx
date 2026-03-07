@@ -36,10 +36,11 @@ export function Footer() {
                 <div className="space-y-4">
                     <h4 className="font-semibold text-lg tracking-wide">Shop</h4>
                     <ul className="space-y-3 text-primary-foreground/70 text-sm">
-                        <li><Link href="/category/fashion" className="hover:text-accent transition-colors">Fashion & Apparel</Link></li>
-                        <li><Link href="/category/electronics" className="hover:text-accent transition-colors">Premium Electronics</Link></li>
-                        <li><Link href="/category/watches" className="hover:text-accent transition-colors">Luxury Watches</Link></li>
-                        <li><Link href="/category/beauty" className="hover:text-accent transition-colors">Beauty & Wellness</Link></li>
+                        <li><Link href="/category/luxury-watches" className="hover:text-accent transition-colors">Luxury Watches</Link></li>
+                        <li><Link href="/category/fine-jewelry" className="hover:text-accent transition-colors">Fine Jewelry</Link></li>
+                        <li><Link href="/category/designer-bags" className="hover:text-accent transition-colors">Designer Bags</Link></li>
+                        <li><Link href="/category/premium-audio" className="hover:text-accent transition-colors">Premium Audio</Link></li>
+                        <li><Link href="/category/fragrances" className="hover:text-accent transition-colors">Fragrances</Link></li>
                     </ul>
                 </div>
 
@@ -48,9 +49,8 @@ export function Footer() {
                     <h4 className="font-semibold text-lg tracking-wide">Company</h4>
                     <ul className="space-y-3 text-primary-foreground/70 text-sm">
                         <li><Link href="/about" className="hover:text-accent transition-colors">About Us</Link></li>
-                        <li><Link href="/about" className="hover:text-accent transition-colors">Careers</Link></li>
+                        <li><Link href="/careers" className="hover:text-accent transition-colors">Careers & Internships</Link></li>
                         <li><Link href="/seller/onboarding" className="hover:text-accent transition-colors flex items-center gap-1">Become a Seller <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">NEW</span></Link></li>
-                        <li><Link href="/about" className="hover:text-accent transition-colors">Press</Link></li>
                     </ul>
                 </div>
 
@@ -59,7 +59,7 @@ export function Footer() {
                     <h4 className="font-semibold text-lg tracking-wide">Help & Info</h4>
                     <ul className="space-y-3 text-primary-foreground/70 text-sm">
                         <li><Link href="/support" className="hover:text-accent transition-colors">Customer Support</Link></li>
-                        <li><Link href="/account/orders" className="hover:text-accent transition-colors">Returns & Refunds</Link></li>
+                        <li><Link href="/account/returns" className="hover:text-accent transition-colors">Returns & Refunds</Link></li>
                         <li><Link href="/support/faq" className="hover:text-accent transition-colors">FAQs</Link></li>
                         <li><Link href="/feedback" className="hover:text-accent transition-colors">Give Feedback</Link></li>
                     </ul>

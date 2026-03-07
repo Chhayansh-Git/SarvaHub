@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LineChart, BarChart3, Package, Users, Settings, LogOut, ChevronRight, Tag } from "lucide-react";
+import { LineChart, BarChart3, Package, Users, Settings, LogOut, ChevronRight, Tag, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUserStore } from "@/store/userStore";
@@ -45,6 +45,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         { label: "Orders", href: "/seller/orders", icon: BarChart3 },
         { label: "Customers", href: "/seller/customers", icon: Users },
         { label: "Offers & Discounts", href: "/seller/discounts", icon: Tag },
+        { label: "My Purchases", href: "/seller/purchases", icon: ShoppingBag },
         { label: "Settings", href: "/seller/settings", icon: Settings },
     ];
 
@@ -89,7 +90,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                             New Listing <ChevronRight className="h-4 w-4" />
                         </Link>
 
-                        <button className="flex items-center gap-3 px-4 py-2 text-rose-500 font-medium hover:bg-rose-500/10 rounded-xl transition-colors w-full">
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-4 py-2 text-rose-500 font-medium hover:bg-rose-500/10 rounded-xl transition-colors w-full">
                             <LogOut className="h-5 w-5" />
                             Log out
                         </button>

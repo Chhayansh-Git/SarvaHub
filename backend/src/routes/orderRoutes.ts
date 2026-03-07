@@ -11,6 +11,8 @@ import {
     getSellerReturns,
     updateSellerReturn,
     getSellerFeedback,
+    createB2bOrder,
+    getUserReturns,
 } from '../controllers/orderController';
 
 const router = Router();
@@ -20,7 +22,9 @@ router.use(authenticate);
 
 // ─── Consumer Order Routes ──────────────────────────────────────────
 router.get('/', getUserOrders);
+router.get('/returns', getUserReturns);
 router.get('/:id', getOrderById);
+router.post('/b2b', createB2bOrder);
 router.post('/:id/review', submitReview);
 router.post('/:id/return', submitReturn);
 

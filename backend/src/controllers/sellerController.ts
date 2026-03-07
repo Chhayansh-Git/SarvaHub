@@ -13,7 +13,7 @@ export async function submitOnboarding(req: Request, res: Response, next: NextFu
         const user = await User.findById(req.user!.id);
         if (!user) return next(new AppError(404, 'NOT_FOUND', 'User not found.'));
 
-        const { businessName, businessType, gstNumber, panNumber, registeredAddress, bankDetails, contactPerson, categories } = req.body;
+        const { businessName, businessType, gstNumber, panNumber, registeredAddress, bankDetails, kycDetails, contactPerson, categories } = req.body;
 
         // user.role = 'seller'; // DO NOT set role yet, wait for payment
         user.sellerProfile = {
@@ -23,6 +23,11 @@ export async function submitOnboarding(req: Request, res: Response, next: NextFu
             panNumber,
             registeredAddress,
             bankDetails,
+            kycDetails: {
+                ...kycDetails,
+                verificationStatus: 'pending',
+                submittedAt: new Date(),
+            },
             contactPerson,
             categories: categories || [],
             status: 'pending_payment',
@@ -109,6 +114,18 @@ export async function confirmOnboardingPayment(req: Request, res: Response, next
     }
 }
 
+// GET /api/v1/seller/products — get a seller's complete active inventory
+export async function getSellerProducts(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { Product } = await import('../models/Product');
+        const sellerId = req.user!.id;
+        const products = await Product.find({ seller: sellerId }).sort({ createdAt: -1 });
+        res.json({ products });
+    } catch (err) {
+        next(err);
+    }
+}
+
 // GET /api/v1/seller/analytics — seller analytics
 export async function getSellerAnalytics(req: Request, res: Response, next: NextFunction) {
     try {
@@ -171,6 +188,23 @@ export async function updateSellerSettings(req: Request, res: Response, next: Ne
             if (req.body[key] !== undefined) {
                 (user.sellerProfile as any)[key] = req.body[key];
             }
+        }
+
+        // Handle nested settings manually to enforce verification checks
+        if (req.body.bankDetails) {
+            user.sellerProfile.bankDetails = {
+                ...(user.sellerProfile.bankDetails as any)?._doc || user.sellerProfile.bankDetails,
+                ...req.body.bankDetails,
+            };
+        }
+
+        if (req.body.kycDetails) {
+            user.sellerProfile.kycDetails = {
+                ...(user.sellerProfile.kycDetails as any)?._doc || user.sellerProfile.kycDetails,
+                ...req.body.kycDetails,
+                verificationStatus: 'pending', // Changing KYC docs always reverts status to pending
+                submittedAt: new Date(),
+            };
         }
 
         if (!user.sellerProfile.contactPerson) user.sellerProfile.contactPerson = {};

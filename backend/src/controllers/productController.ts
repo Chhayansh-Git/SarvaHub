@@ -142,12 +142,14 @@ export async function getProductBySlug(req: Request, res: Response, next: NextFu
     try {
         const { slug } = req.params;
 
-        const product = await Product.findOne({ slug });
+        const product = await Product.findOne({ slug })
+            .populate('seller', 'name companyName sellerProfile')
+            .lean();
         if (!product) {
             throw Errors.notFound('Product');
         }
 
-        res.json(product.toJSON());
+        res.json(product);
     } catch (err) {
         next(err);
     }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ShoppingBag, Heart, ShieldCheck, Home } from "lucide-react";
+import { Star, ShoppingBag, Heart, ShieldCheck, Home, Bell } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
 import { useCartStore } from "@/store/cartStore";
 import { api } from "@/lib/api";
@@ -23,6 +23,7 @@ export interface ProductCard {
     image: string;
     verified: boolean;
     category?: string;
+    discount?: number;
 }
 
 interface ProductGridProps {
@@ -139,6 +140,11 @@ export function ProductGrid({ products, isLoading, totalItems, sort, onSortChang
                                         <span className="text-xs font-bold text-white tracking-wider">AUTHENTIC</span>
                                     </div>
                                 )}
+                                {(product.stock ?? 1) < 1 && (
+                                    <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-rose-500/90 backdrop-blur-sm text-white text-xs font-bold rounded-full">
+                                        Out of Stock
+                                    </div>
+                                )}
                                 <button
                                     onClick={(e) => handleWishlist(e, product)}
                                     className="absolute top-4 right-4 z-10 p-2 rounded-full glass-panel hover:bg-white/20 transition-colors text-white"
@@ -150,18 +156,28 @@ export function ProductGrid({ products, isLoading, totalItems, sort, onSortChang
                                     src={product.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'}
                                     alt={product.name}
                                     fill
-                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                    className={`object-cover transition-transform duration-700 group-hover:scale-105 ${(product.stock ?? 1) < 1 ? 'opacity-60' : ''}`}
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 />
 
                                 <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 transform translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 bg-gradient-to-t from-black/80 to-transparent">
-                                    <button
-                                        onClick={(e) => handleAddToCart(e, product.id || product._id || "")}
-                                        className="w-full py-3 bg-white text-black font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
-                                    >
-                                        <ShoppingBag className="h-5 w-5" />
-                                        Add to Cart
-                                    </button>
+                                    {(product.stock ?? 1) < 1 ? (
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); alert('We will notify you when this product is back in stock!'); }}
+                                            className="w-full py-3 bg-amber-500 text-black font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors"
+                                        >
+                                            <Bell className="h-5 w-5" />
+                                            Notify Me When Available
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={(e) => handleAddToCart(e, product.id || product._id || "")}
+                                            className="w-full py-3 bg-white text-black font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <ShoppingBag className="h-5 w-5" />
+                                            Add to Cart
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -180,10 +196,15 @@ export function ProductGrid({ products, isLoading, totalItems, sort, onSortChang
                                         <p className="text-xl font-bold font-mono">
                                             ₹{product.price.toLocaleString('en-IN')}
                                         </p>
-                                        {product.originalPrice && product.originalPrice > product.price && (
-                                            <p className="text-sm text-muted-foreground line-through">
-                                                ₹{product.originalPrice.toLocaleString('en-IN')}
-                                            </p>
+                                        {(((product.originalPrice ?? 0) > product.price) || ((product.discount ?? 0) > 0)) && (
+                                            <>
+                                                <p className="text-sm text-muted-foreground line-through">
+                                                    ₹{(product.originalPrice || 0).toLocaleString('en-IN')}
+                                                </p>
+                                                <span className="text-xs font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded ml-2">
+                                                    {(product.discount ?? 0) > 0 ? product.discount : Math.round((((product.originalPrice ?? 0) - product.price) / (product.originalPrice ?? 1)) * 100)}% OFF
+                                                </span>
+                                            </>
                                         )}
                                     </div>
                                 </div>

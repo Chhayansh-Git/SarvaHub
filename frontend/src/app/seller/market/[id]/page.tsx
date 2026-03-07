@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import { Loader2, ArrowLeft, TrendingUp, Star, PackageSearch, ShieldCheck, ShoppingCart, Info } from "lucide-react";
+import { Loader2, ArrowLeft, TrendingUp, Star, PackageSearch, ShieldCheck, ShoppingCart, Info, CheckCircle } from "lucide-react";
 
 type ProductDetails = {
     _id: string;
@@ -49,25 +50,24 @@ export default function MarketProductPage() {
         fetchProduct();
     }, [params.id]);
 
+    const [orderSuccess, setOrderSuccess] = useState(false);
+
     const handleB2BOrder = async () => {
         if (!product) return;
         setIsOrdering(true);
         try {
-            // Place B2B order using the standard order pipeline, tagging it as B2B (optional for backend, but we send the flag)
-            await api.post('/orders', {
-                items: [{ product: product._id, quantity, price: product.price }],
+            await api.post('/orders/b2b', {
+                productId: product._id,
+                quantity,
                 shippingAddress: {
-                    street: "B2B Restock Order",
+                    line1: "B2B Restock Order",
                     city: "Seller HQ",
                     state: "NA",
-                    zipCode: "000000",
-                    country: "India"
+                    pincode: "000000",
                 },
-                paymentInfo: { method: 'b2b_credit', transactionId: `B2B_TXN_${Date.now()}` },
-                isB2BTransaction: true
             });
-            alert("B2B Order placed successfully! Check your standard Orders tab.");
-            router.push('/seller/dashboard');
+            setOrderSuccess(true);
+            setTimeout(() => router.push('/seller/purchases'), 2000);
         } catch (error: any) {
             console.error("B2B Order failed:", error);
             alert(error.message || "Failed to place B2B order.");
@@ -120,7 +120,12 @@ export default function MarketProductPage() {
                                 )}
                             </div>
                             <h1 className="text-3xl font-heading font-black mb-2">{product.name}</h1>
-                            <div className="text-muted-foreground mb-6">Sold by <span className="font-bold text-foreground">{product.seller?.companyName || product.seller?.name}</span></div>
+                            <div className="text-muted-foreground mb-6 flex items-center gap-2">
+                                Sold by <Link href={`/seller/store/${(product.seller as any)?._id || (product.seller as any)?.id}`} className="font-bold text-foreground hover:text-accent transition-colors hover:underline">{product.seller?.companyName || product.seller?.name}</Link>
+                                <Link href={`/seller/store/${(product.seller as any)?._id || (product.seller as any)?.id}`} className="text-xs font-bold bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent hover:text-white transition-all ml-2">
+                                    Visit B2B Store
+                                </Link>
+                            </div>
 
                             <div className="prose prose-sm dark:prose-invert max-w-none mb-6 line-clamp-3">
                                 {product.description}
@@ -195,18 +200,28 @@ export default function MarketProductPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={handleB2BOrder}
-                            disabled={isOrdering || product.stock < 1}
-                            className="w-full py-4 bg-foreground text-background font-black rounded-xl hover:bg-accent hover:text-white hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                            {isOrdering ? <Loader2 className="w-5 h-5 animate-spin" /> : "Authorize Purchase"}
-                        </button>
+                        {orderSuccess ? (
+                            <div className="text-center p-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 animate-in fade-in zoom-in duration-300">
+                                <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+                                <h4 className="text-lg font-bold text-emerald-500">Order Authorized!</h4>
+                                <p className="text-sm text-muted-foreground mt-1">Redirecting to your purchases...</p>
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleB2BOrder}
+                                    disabled={isOrdering || product.stock < 1}
+                                    className="w-full py-4 bg-foreground text-background font-black rounded-xl hover:bg-accent hover:text-white hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isOrdering ? <Loader2 className="w-5 h-5 animate-spin" /> : "Authorize Purchase"}
+                                </button>
 
-                        <div className="mt-4 flex items-start gap-2 rounded-lg bg-blue-500/10 p-3 text-xs text-blue-500">
-                            <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                            <p>B2B orders are processed through your verified seller account credit line and shipped to your primary warehouse.</p>
-                        </div>
+                                <div className="mt-4 flex items-start gap-2 rounded-lg bg-blue-500/10 p-3 text-xs text-blue-500">
+                                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                                    <p>B2B orders are processed through your verified seller account credit line and shipped to your primary warehouse.</p>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Key Metrics */}
