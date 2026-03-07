@@ -143,7 +143,7 @@ export async function logout(_req: Request, res: Response, next: NextFunction) {
         res.clearCookie('accessToken', {
             httpOnly: true,
             secure: config.nodeEnv === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax',
             path: '/',
         });
 

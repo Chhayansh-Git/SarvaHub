@@ -49,7 +49,7 @@ export function Footer() {
                     <ul className="space-y-3 text-primary-foreground/70 text-sm">
                         <li><Link href="/about" className="hover:text-accent transition-colors">About Us</Link></li>
                         <li><Link href="/about" className="hover:text-accent transition-colors">Careers</Link></li>
-                        <li><Link href="/seller/onboarding" className="hover:text-accent transition-colors flex items-center gap-1">Partner with Us <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">NEW</span></Link></li>
+                        <li><Link href="/seller/onboarding" className="hover:text-accent transition-colors flex items-center gap-1">Become a Seller <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">NEW</span></Link></li>
                         <li><Link href="/about" className="hover:text-accent transition-colors">Press</Link></li>
                     </ul>
                 </div>

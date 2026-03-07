@@ -20,7 +20,7 @@ export async function getAdminStats(req: Request, res: Response, next: NextFunct
         const recentOrders = await Order.find()
             .sort({ createdAt: -1 })
             .limit(5)
-            .populate('userId', 'name email')
+            .populate('user', 'name email')
             .lean();
 
         const totalRevenue = await Order.aggregate([
@@ -73,7 +73,13 @@ export async function updateAdminUser(req: Request, res: Response, next: NextFun
     try {
         const { role, isBanned } = req.body;
         const update: any = {};
-        if (role) update.role = role;
+        const ALLOWED_ROLES = ['consumer', 'seller', 'admin'];
+        if (role) {
+            if (!ALLOWED_ROLES.includes(role)) {
+                return next(new AppError(400, 'BAD_REQUEST', `Invalid role. Allowed: ${ALLOWED_ROLES.join(', ')}`));
+            }
+            update.role = role;
+        }
         if (typeof isBanned === 'boolean') update.isBanned = isBanned;
 
         const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password');
@@ -95,7 +101,7 @@ export async function getAdminOrders(req: Request, res: Response, next: NextFunc
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit)
-                .populate('userId', 'name email')
+                .populate('user', 'name email')
                 .lean(),
             Order.countDocuments(),
         ]);
@@ -117,7 +123,7 @@ export async function getAdminProducts(req: Request, res: Response, next: NextFu
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit)
-                .populate('sellerId', 'name email')
+                .populate('seller', 'name email')
                 .lean(),
             Product.countDocuments(),
         ]);
@@ -142,11 +148,19 @@ export async function deleteAdminProduct(req: Request, res: Response, next: Next
 // GET /api/v1/admin/tickets — list support tickets
 export async function getAdminTickets(req: Request, res: Response, next: NextFunction) {
     try {
-        const tickets = await SupportTicket.find()
-            .sort({ createdAt: -1 })
-            .populate('userId', 'name email')
-            .lean();
-        res.json({ tickets });
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+
+        const [tickets, total] = await Promise.all([
+            SupportTicket.find()
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .populate('userId', 'name email')
+                .lean(),
+            SupportTicket.countDocuments()
+        ]);
+        res.json({ tickets, total, page, totalPages: Math.ceil(total / limit) });
     } catch (err) {
         next(err);
     }
@@ -155,11 +169,19 @@ export async function getAdminTickets(req: Request, res: Response, next: NextFun
 // GET /api/v1/admin/feedback — list all feedback
 export async function getAdminFeedback(req: Request, res: Response, next: NextFunction) {
     try {
-        const feedback = await Feedback.find()
-            .sort({ upvotes: -1 })
-            .populate('authorId', 'name email')
-            .lean();
-        res.json({ feedback });
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+
+        const [feedback, total] = await Promise.all([
+            Feedback.find()
+                .sort({ upvotes: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .populate('authorId', 'name email')
+                .lean(),
+            Feedback.countDocuments()
+        ]);
+        res.json({ feedback, total, page, totalPages: Math.ceil(total / limit) });
     } catch (err) {
         next(err);
     }

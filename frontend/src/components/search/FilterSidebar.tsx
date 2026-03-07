@@ -27,8 +27,8 @@ interface FilterSidebarProps {
 
 // ─── Component ──────────────────────────────────────────────────────
 
-const DEFAULT_CATEGORIES = ["All Products", "Electronics", "Fashion", "Home & Design", "Beauty", "Sports"];
-const DEFAULT_BRANDS = ["Acoustica", "Heritage Tailors", "Milano Crafted", "Swiss Precision", "Nike", "Sony"];
+const DEFAULT_CATEGORIES = ["All Products", "Luxury Watches", "Fine Jewelry", "Designer Bags", "Premium Audio", "Fragrances", "Sunglasses", "Luxury Pens", "Home Décor"];
+const DEFAULT_BRANDS = ["Rolex", "Cartier", "Hermès", "Apple", "Tom Ford", "Montblanc"];
 
 export function FilterSidebar({
     filters,

@@ -28,32 +28,8 @@ export default function MyOrdersPage() {
                 // Assuming data is an array of orders or { orders: any[] }
                 setOrders(Array.isArray(data) ? data : (data.orders || []));
             } catch (error) {
-                // Fallback to mock data if backend not ready
-                setOrders([
-                    {
-                        id: "SVH-8921-X",
-                        date: "Oct 24, 2023",
-                        status: "Processing",
-                        total: 345000,
-                        itemCount: 1,
-                        estimatedDelivery: "Oct 27, 2023",
-                        items: [
-                            { id: 1, name: "Chronograph Automatic 42mm", brand: "Orion Watch Co.", price: 345000, quantity: 1, image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=300" }
-                        ]
-                    },
-                    {
-                        id: "SVH-7492-B",
-                        date: "Sep 12, 2023",
-                        status: "Delivered",
-                        total: 125000,
-                        itemCount: 2,
-                        deliveredOn: "Sep 15, 2023",
-                        items: [
-                            { id: 1, name: "Aetherius Obsidian Ring", brand: "Aetherius", price: 80000, quantity: 1, image: "https://images.unsplash.com/photo-1515562141207-7a48cf7ce338?auto=format&fit=crop&q=80&w=300" },
-                            { id: 2, name: "AirPods Max - Silver", brand: "Apple", price: 45000, quantity: 1, image: "https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?auto=format&fit=crop&q=80&w=300" }
-                        ]
-                    }
-                ]);
+                // Fallback to empty state if backend fails
+                setOrders([]);
             } finally {
                 setIsLoading(false);
             }

@@ -5,7 +5,6 @@ export function proxy(request: NextRequest) {
     // The Express backend sets this HttpOnly cookie upon successful login
     const token = request.cookies.get('accessToken')?.value;
 
-    // Define protected path prefixes
     const authRoutes = [
         '/account',
         '/checkout',
@@ -13,7 +12,12 @@ export function proxy(request: NextRequest) {
         '/seller/settings',
         '/seller/products',
         '/seller/orders',
-        '/seller/analytics'
+        '/seller/analytics',
+        '/support/tickets',
+        '/seller/listing',
+        '/seller/returns',
+        '/seller/compliance',
+        '/seller/feedback',
     ];
 
     // Check if the current path starts with any of the protected prefixes

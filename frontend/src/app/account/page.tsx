@@ -11,6 +11,12 @@ export default function AccountDashboard() {
     const { user, isAuthenticated, logout } = useUserStore();
     const router = useRouter();
 
+    useEffect(() => {
+        if (!isAuthenticated && !user) {
+            router.push('/');
+        }
+    }, [isAuthenticated, user, router]);
+
     if (!user) return null;
 
     const handleLogout = () => {
@@ -20,7 +26,7 @@ export default function AccountDashboard() {
 
     const dashboardCards = [
         { title: "My Orders", icon: Package, href: "/account/orders", desc: "Track, return, or buy items again" },
-        { title: "Returns & Exchanges", icon: RefreshCcw, href: "/account/orders", desc: "Manage requested returns and exchanges" },
+        { title: "Returns & Exchanges", icon: RefreshCcw, href: "/account/returns", desc: "Manage requested returns and exchanges" },
         { title: "Saved Items", icon: Heart, href: "/account/wishlist", desc: "View items you've favorited" },
         { title: "Support Tickets", icon: Handshake, href: "/support/tickets", desc: "Check status of your inquiries" },
         { title: "Payment Methods", icon: CreditCard, href: "/account/payments", desc: "Manage saved cards and bank accounts" },

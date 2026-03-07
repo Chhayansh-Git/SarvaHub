@@ -2,12 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ShoppingBag, Heart, ShieldCheck } from "lucide-react";
+import { Star, ShoppingBag, Heart, ShieldCheck, Home } from "lucide-react";
+import { useUserStore } from "@/store/userStore";
+import { useCartStore } from "@/store/cartStore";
+import { api } from "@/lib/api";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
 export interface ProductCard {
     id: string;
+    _id?: string;
     slug?: string;
     name: string;
     brand: string;
@@ -27,6 +31,7 @@ interface ProductGridProps {
     totalItems?: number;
     sort?: string;
     onSortChange?: (sort: string) => void;
+    onClearSearch?: () => void;
 }
 
 // ─── Loading Skeleton ───────────────────────────────────────────────
@@ -46,8 +51,41 @@ function ProductSkeleton() {
 
 // ─── Component ──────────────────────────────────────────────────────
 
-export function ProductGrid({ products, isLoading, totalItems, sort, onSortChange }: ProductGridProps) {
+export function ProductGrid({ products, isLoading, totalItems, sort, onSortChange, onClearSearch }: ProductGridProps) {
     const displayCount = totalItems ?? products.length;
+
+    const { isAuthenticated, openAuthModal } = useUserStore();
+    const addItem = useCartStore(state => state.addItem);
+
+    const handleAddToCart = async (e: React.MouseEvent, productId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isAuthenticated) return openAuthModal('login');
+        try {
+            await addItem(productId, 1);
+            alert("Added to cart");
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleWishlist = async (e: React.MouseEvent, product: ProductCard) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isAuthenticated) return openAuthModal('login');
+        try {
+            await api.post('/wishlist', {
+                productId: product.id || product._id,
+                name: product.name,
+                brand: product.brand,
+                price: product.price,
+                image: product.image,
+            });
+            alert("Added to saved items!");
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     return (
         <div className="flex-1">
@@ -78,7 +116,14 @@ export function ProductGrid({ products, isLoading, totalItems, sort, onSortChang
                     <div className="col-span-full text-center py-20">
                         <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                         <h3 className="text-lg font-bold mb-2">No products found</h3>
-                        <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
+                        <p className="text-muted-foreground mb-8">Try adjusting your filters or search terms.</p>
+                        <button
+                            onClick={onClearSearch}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background font-semibold rounded-full hover:bg-primary transition-colors"
+                        >
+                            <Home className="h-4 w-4" />
+                            Back to Home
+                        </button>
                     </div>
                 ) : (
                     products.map((product) => (
@@ -95,7 +140,7 @@ export function ProductGrid({ products, isLoading, totalItems, sort, onSortChang
                                     </div>
                                 )}
                                 <button
-                                    onClick={(e) => { e.preventDefault(); }}
+                                    onClick={(e) => handleWishlist(e, product)}
                                     className="absolute top-4 right-4 z-10 p-2 rounded-full glass-panel hover:bg-white/20 transition-colors text-white"
                                 >
                                     <Heart className="h-5 w-5" />
@@ -111,7 +156,7 @@ export function ProductGrid({ products, isLoading, totalItems, sort, onSortChang
 
                                 <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 transform translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 bg-gradient-to-t from-black/80 to-transparent">
                                     <button
-                                        onClick={(e) => { e.preventDefault(); }}
+                                        onClick={(e) => handleAddToCart(e, product.id || product._id || "")}
                                         className="w-full py-3 bg-white text-black font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
                                     >
                                         <ShoppingBag className="h-5 w-5" />
@@ -147,6 +192,6 @@ export function ProductGrid({ products, isLoading, totalItems, sort, onSortChang
                     ))
                 )}
             </div>
-        </div>
+        </div >
     );
 }

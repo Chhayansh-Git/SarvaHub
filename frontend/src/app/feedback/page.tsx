@@ -46,7 +46,7 @@ export default function GeneralFeedbackPage() {
             setDescription("");
             setShowForm(false);
         } catch {
-            // silently handle
+            alert("Failed to submit feedback. Please try again.");
         } finally {
             setSubmitting(false);
         }

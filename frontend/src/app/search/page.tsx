@@ -27,17 +27,6 @@ interface ProductsApiResponse {
     };
 }
 
-// ─── Fallback Data ──────────────────────────────────────────────────
-
-const FALLBACK_PRODUCTS: ProductCard[] = [
-    { id: "1", slug: "chronograph-automatic-42mm", name: "Chronograph Automatic 42mm", brand: "Orion Watch Co.", price: 345000, rating: 4.9, reviewCount: 124, image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?q=80&w=2699&auto=format&fit=crop", verified: true, category: "Accessories" },
-    { id: "2", slug: "noise-cancelling-studio-pro", name: "Noise-Cancelling Studio Pro", brand: "Acoustica", price: 34500, rating: 4.8, reviewCount: 89, image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=80&w=3265&auto=format&fit=crop", verified: true, category: "Electronics" },
-    { id: "3", slug: "italian-leather-briefcase", name: "Italian Leather Briefcase", brand: "Milano Crafted", price: 74000, rating: 5.0, reviewCount: 42, image: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=2699&auto=format&fit=crop", verified: true, category: "Fashion" },
-    { id: "4", slug: "cashmere-overcoat", name: "Cashmere Overcoat", brand: "Heritage Tailors", price: 105000, rating: 4.7, reviewCount: 215, image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=3000&auto=format&fit=crop", verified: true, category: "Fashion" },
-    { id: "5", slug: "minimalist-smart-speaker", name: "Minimalist Smart Speaker", brand: "Sony", price: 25000, rating: 4.6, reviewCount: 312, image: "https://images.unsplash.com/photo-1589003077984-894e133dabab?q=80&w=3174&auto=format&fit=crop", verified: false, category: "Electronics" },
-    { id: "6", slug: "matte-black-espresso-machine", name: "Matte Black Espresso Machine", brand: "Home & Design", price: 135000, rating: 4.9, reviewCount: 56, image: "https://images.unsplash.com/photo-1510224151-5898bc582666?q=80&w=3270&auto=format&fit=crop", verified: true, category: "Home & Design" },
-];
-
 // ─── Search Content ─────────────────────────────────────────────────
 
 function SearchContent() {
@@ -80,15 +69,17 @@ function SearchContent() {
             params.set("page", String(pageParam));
             params.set("limit", "20");
 
+            console.log("Fetching products with params:", params.toString());
             const data = await api.get<ProductsApiResponse>(`/products?${params.toString()}`);
+            console.log("API Response:", data);
+
             setProducts(data.data || []);
             setTotalItems(data.pagination?.totalItems || 0);
             setTotalPages(data.pagination?.totalPages || 1);
             if (data.filters) setFilters(data.filters);
-        } catch {
-            // Fallback to mock data if backend unavailable
-            setProducts(FALLBACK_PRODUCTS);
-            setTotalItems(FALLBACK_PRODUCTS.length);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+            setProducts([]);
         } finally {
             setIsLoading(false);
         }
@@ -108,9 +99,24 @@ function SearchContent() {
                 params.set(key, value);
             }
         }
-        // Reset to page 1 on filter changes
-        if (!updates.page) params.set("page", "1");
+        // Reset to page 1 on filter changes (but not when updating page itself)
+        if (!updates.page && Object.keys(updates).some(k => k !== 'page')) {
+            params.set("page", "1");
+        }
         router.push(`/search?${params.toString()}`);
+    };
+
+    // Sync URL params with local state on mount and when URL changes
+    useEffect(() => {
+        // Update brand state from URL if present
+        if (categoryParam) {
+            // Category is handled separately
+        }
+        // This will refetch with updated URL params
+    }, [categoryParam]);
+
+    const clearSearchAndGoHome = () => {
+        router.push('/');
     };
 
     return (
@@ -166,7 +172,7 @@ function SearchContent() {
                                 setSelectedBrands([]);
                                 setSelectedRating(undefined);
                                 setMaxPrice(undefined);
-                                updateSearchParams({ category: null, sort: null });
+                                updateSearchParams({ category: null, sort: null, q: null });
                             }}
                         />
                     </aside>
@@ -179,6 +185,7 @@ function SearchContent() {
                             totalItems={totalItems}
                             sort={sortParam}
                             onSortChange={(sort) => updateSearchParams({ sort })}
+                            onClearSearch={clearSearchAndGoHome}
                         />
 
                         {/* Pagination */}

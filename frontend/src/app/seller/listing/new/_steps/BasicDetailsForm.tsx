@@ -1,9 +1,31 @@
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+
 interface StepProps {
     formData: any;
     setFormData: (data: any) => void;
 }
 
+interface Category {
+    id: string;
+    name: string;
+}
+
 export function BasicDetailsForm({ formData, setFormData }: StepProps) {
+    const [categories, setCategories] = useState<Category[]>([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await api.get<{ categories: Category[] }>('/categories');
+                setCategories(data.categories || []);
+            } catch (error) {
+                console.error("Failed to load categories", error);
+            }
+        };
+        fetchCategories();
+    }, []);
+
     return (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
             <div className="mb-6">
@@ -32,11 +54,9 @@ export function BasicDetailsForm({ formData, setFormData }: StepProps) {
                             className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none cursor-pointer"
                         >
                             <option value="" disabled>Select Primary Category</option>
-                            <option value="Watches">Luxury Watches</option>
-                            <option value="Fashion">Designer Fashion</option>
-                            <option value="Electronics">Premium Electronics</option>
-                            <option value="Jewelry">Fine Jewelry</option>
-                            <option value="Beauty">Beauty & Cosmetics</option>
+                            {categories.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
                         </select>
                     </div>
 
@@ -60,8 +80,8 @@ export function BasicDetailsForm({ formData, setFormData }: StepProps) {
                                 key={cond}
                                 onClick={() => setFormData({ ...formData, condition: cond })}
                                 className={`p-4 rounded-xl border text-sm font-bold capitalize transition-all ${formData.condition === cond
-                                        ? 'border-accent bg-accent/10 text-foreground shadow-sm'
-                                        : 'border-border glass-panel hover:bg-muted text-muted-foreground hover:text-foreground'
+                                    ? 'border-accent bg-accent/10 text-foreground shadow-sm'
+                                    : 'border-border glass-panel hover:bg-muted text-muted-foreground hover:text-foreground'
                                     }`}
                             >
                                 {cond.replace('_', ' ')}
@@ -75,9 +95,20 @@ export function BasicDetailsForm({ formData, setFormData }: StepProps) {
                     <textarea
                         value={formData.shortDescription}
                         onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
-                        rows={3}
+                        rows={2}
                         className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none resize-none"
                         placeholder="A brief, engaging summary of the product (max 150 characters)"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold">Full Description</label>
+                    <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={5}
+                        className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none resize-none"
+                        placeholder="Detailed product facts, history, or specifics"
                     />
                 </div>
             </div>

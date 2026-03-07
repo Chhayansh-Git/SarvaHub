@@ -32,7 +32,9 @@ export default function NewListingPage() {
     // Master Form State
     const [formData, setFormData] = useState<any>({
         // Basic
-        name: "", shortDescription: "", category: "", brand: "", condition: "new",
+        name: "", shortDescription: "", description: "", category: "", brand: "", condition: "new",
+        // Media
+        images: [],
         // Authenticity
         sellerType: "reseller", mpn: "", countryOfOrigin: "India", manufactureDate: "",
         // Pricing
@@ -42,6 +44,15 @@ export default function NewListingPage() {
     });
 
     const handleNext = () => {
+        if (currentStep === 1 && (!formData.name || !formData.category || !formData.brand)) {
+            return alert("Please fill in basic product details.");
+        }
+        if (currentStep === 2 && !formData.mpn) {
+            return alert("Please provide MPN/Serial Number for authenticity.");
+        }
+        if (currentStep === 5 && (!formData.sellingPrice || !formData.inventory)) {
+            return alert("Please provide valid pricing and inventory.");
+        }
         if (currentStep < 7) {
             setCurrentStep(prev => prev + 1);
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -58,12 +69,20 @@ export default function NewListingPage() {
         setIsSubmitting(true);
         try {
             const { api } = await import('@/lib/api');
-            await api.post('/seller/products', formData);
+
+            // Map frontend form data to backend expected format
+            const payload = {
+                ...formData,
+                price: Number(formData.sellingPrice),
+                originalPrice: Number(formData.mrp || formData.sellingPrice),
+                stock: Number(formData.inventory)
+            };
+
+            await api.post('/seller/products', payload);
             setIsSuccess(true);
         } catch (error) {
             console.error("Failed to submit product", error);
-            // Fallback to success UI if backend is not ready
-            setIsSuccess(true);
+            alert("Failed to create product listing. Please check your data or try again.");
         } finally {
             setIsSubmitting(false);
         }

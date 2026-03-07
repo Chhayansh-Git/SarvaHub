@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, Mic, Camera, X, UploadCloud, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useHistoryStore } from "@/store/historyStore";
+import { api } from "@/lib/api";
 import Link from "next/link";
 
 export function OmniSearchBar() {
@@ -14,7 +15,23 @@ export function OmniSearchBar() {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // Sync query state with URL — clear when leaving search page
+    useEffect(() => {
+        if (pathname === '/search') {
+            const urlQuery = searchParams.get('q') || '';
+            setQuery(urlQuery);
+        } else {
+            setQuery('');
+            setSuggestions([]);
+        }
+    }, [pathname, searchParams]);
 
     const { searchedKeywords, recentlyViewedProducts, addSearchKeyword, clearHistory } = useHistoryStore();
 
@@ -82,10 +99,37 @@ export function OmniSearchBar() {
         e?.preventDefault();
         if (query.trim()) {
             addSearchKeyword(query);
+            setSuggestions([]);
             router.push(`/search?q=${encodeURIComponent(query)}`);
             setIsFocused(false);
         }
     };
+
+    // ── Live Autocomplete ────────────────────────────────────────────
+    const fetchSuggestions = useCallback(async (q: string) => {
+        if (q.length < 2) { setSuggestions([]); return; }
+        setLoadingSuggestions(true);
+        try {
+            const res = await api.get<any>(`/products?q=${encodeURIComponent(q)}&limit=6`);
+            const items = res?.data || [];
+            setSuggestions(items);
+        } catch {
+            setSuggestions([]);
+        } finally {
+            setLoadingSuggestions(false);
+        }
+    }, []);
+
+    const handleQueryChange = (val: string) => {
+        setQuery(val);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+    };
+
+    // Clean up debounce on unmount
+    useEffect(() => {
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    }, []);
 
     // Drag and Drop Logic
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,9 +182,9 @@ export function OmniSearchBar() {
                 <input
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => handleQueryChange(e.target.value)}
                     onFocus={() => { stopListening(); setIsFocused(true); }}
-                    onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                    onBlur={() => setTimeout(() => setIsFocused(false), 400)}
                     placeholder="Search for premium products, brands, or categories..."
                     className="w-full h-12 pl-12 pr-24 bg-background/50 backdrop-blur-sm border border-border rounded-full outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all shadow-inner placeholder:text-muted-foreground/70"
                 />
@@ -206,6 +250,50 @@ export function OmniSearchBar() {
                                     </div>
                                 </div>
                             )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Live Autocomplete Suggestions */}
+                <AnimatePresence>
+                    {isFocused && suggestions.length > 0 && query.length >= 2 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute top-14 left-0 w-full glass-panel border border-border rounded-2xl shadow-xl overflow-hidden z-50"
+                        >
+                            <div className="px-4 py-2 border-b border-border/50">
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Suggestions</span>
+                            </div>
+                            <div className="max-h-[360px] overflow-y-auto">
+                                {suggestions.map((item: any) => (
+                                    <Link
+                                        key={item.id || item.slug}
+                                        href={`/products/${item.slug}`}
+                                        onClick={() => { setIsFocused(false); setSuggestions([]); }}
+                                        className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/20 last:border-0"
+                                    >
+                                        {item.image && (
+                                            <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-foreground truncate">{item.name}</p>
+                                            <p className="text-xs text-muted-foreground">{item.brand}</p>
+                                        </div>
+                                        <span className="text-sm font-bold text-accent flex-shrink-0">₹{(item.price || 0).toLocaleString('en-IN')}</span>
+                                    </Link>
+                                ))}
+                            </div>
+                            <button
+                                onClick={handleSearchSubmit}
+                                className="w-full px-4 py-2.5 text-center text-sm font-semibold text-accent hover:bg-muted/50 transition-colors border-t border-border/50"
+                            >
+                                See all results for "{query}"
+                            </button>
                         </motion.div>
                     )}
                 </AnimatePresence>

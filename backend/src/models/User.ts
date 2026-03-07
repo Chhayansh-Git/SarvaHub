@@ -118,7 +118,7 @@ const SellerProfileSchema = new Schema(
         contactPerson: { type: ContactPersonSchema },
         status: {
             type: String,
-            enum: ['pending_verification', 'active', 'suspended'],
+            enum: ['pending_payment', 'pending_verification', 'active', 'suspended'],
             default: 'pending_verification',
         },
         rating: { type: Number, default: 0 },

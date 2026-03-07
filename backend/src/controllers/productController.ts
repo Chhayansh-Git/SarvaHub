@@ -52,7 +52,22 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
         // 5. Generate QR Code asynchronously and update the product
         const productUrl = `${config.frontendUrl}/products/${slug}`;
         try {
-            const qrCodeUrl = await QrCodeService.generateAndUpload(product._id, productUrl);
+            // Look up the seller to embed their name in the QR
+            const { User } = await import('../models/User');
+            const seller = await User.findById(sellerId).select('name sellerProfile.businessName').lean();
+            const sellerName = (seller as any)?.sellerProfile?.businessName || (seller as any)?.name || 'Unknown';
+
+            const qrCodeUrl = await QrCodeService.generateAndUpload(product._id, {
+                productName: body.name,
+                brand: body.brand || '',
+                price: productData.price,
+                originalPrice: productData.originalPrice,
+                category: body.category || '',
+                sellerName,
+                sellerId: String(sellerId),
+                authenticity: 'verified',
+                productUrl,
+            });
             product.qrCodeUrl = qrCodeUrl;
             await product.save();
         } catch (qrErr) {
@@ -152,7 +167,7 @@ export async function updateProduct(req: Request, res: Response, next: NextFunct
         }
 
         // Verify ownership
-        if (product.seller !== sellerId) {
+        if (String(product.seller) !== sellerId) {
             throw Errors.forbidden('You can only update your own products.');
         }
 
@@ -206,7 +221,7 @@ export async function deleteProduct(req: Request, res: Response, next: NextFunct
         }
 
         // Verify ownership
-        if (product.seller !== sellerId) {
+        if (String(product.seller) !== sellerId) {
             throw Errors.forbidden('You can only delete your own products.');
         }
 

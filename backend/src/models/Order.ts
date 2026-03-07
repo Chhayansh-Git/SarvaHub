@@ -77,7 +77,7 @@ const TrackingSchema = new Schema(
 export interface IOrder {
     _id: string;
     user: string;
-    seller: string;
+    seller: string | string[];
     status: string;
     statusLabel: string;
     items: Array<{
@@ -134,7 +134,7 @@ const OrderSchema = new Schema(
     {
         _id: { type: String, default: () => generateOrderId() },
         user: { type: String, ref: 'User', required: true },
-        seller: { type: String, ref: 'User', default: null },
+        seller: { type: [{ type: String, ref: 'User' }], default: [] },
         status: {
             type: String,
             enum: [

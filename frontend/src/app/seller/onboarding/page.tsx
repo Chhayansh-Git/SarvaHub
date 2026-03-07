@@ -1,15 +1,26 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Check, ChevronRight, UploadCloud, ShieldCheck, Building2, User, FileText, CheckCircle2, CreditCard, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useUserStore } from "@/store/userStore";
 
 export default function SellerOnboarding() {
+    const { user, isAuthenticated, openAuthModal } = useUserStore();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!isAuthenticated || !user) {
+            openAuthModal('register', 'You need a SarvaHub consumer account before applying as a seller.');
+        } else if (user.role === 'seller') {
+            router.replace('/seller/dashboard');
+        }
+    }, [user, isAuthenticated, openAuthModal, router]);
+
     const [step, setStep] = useState(1);
     const [isSuccess, setIsSuccess] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const router = useRouter();
 
     const [formData, setFormData] = useState({
         businessName: "",
@@ -31,7 +42,36 @@ export default function SellerOnboarding() {
     const [uploadingDoc, setUploadingDoc] = useState(false);
     const [uploadingKyc, setUploadingKyc] = useState(false);
 
-    const nextStep = () => setStep((prev) => Math.min(prev + 1, 5));
+    if (!isAuthenticated || !user) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center space-y-4">
+                    <Loader2 className="h-12 w-12 text-accent animate-spin mx-auto" />
+                    <p className="text-muted-foreground font-medium animate-pulse">Waiting for authentication...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const nextStep = () => {
+        if (step === 1) {
+            if (!formData.businessName || !formData.registrationNumber || !formData.taxId) {
+                return alert("Please fill in all business details.");
+            }
+        }
+        if (step === 2) {
+            if (!formData.founderName || !formData.email || !formData.phone || !formData.address) {
+                return alert("Please fill in all personal details.");
+            }
+        }
+        if (step === 3 && !formData.category) {
+            return alert("Please select a primary category.");
+        }
+        if (step === 4 && !formData.businessDocUrl) {
+            return alert("Please upload business registration document.");
+        }
+        setStep((prev) => Math.min(prev + 1, 5));
+    };
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "business" | "kyc") => {
@@ -43,10 +83,18 @@ export default function SellerOnboarding() {
             const fileData = new FormData();
             fileData.append("file", file);
             fileData.append("folder", "kyc");
-            const res = await api.post("/upload", fileData, {
-                headers: {"Content-Type": "multipart/form-data"}
+            const res = await api.post<any>("/upload", fileData, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
-        } catch {
+            if (res.data?.url) {
+                if (isBusiness) setFormData({ ...formData, businessDocUrl: res.data.url });
+                else setFormData({ ...formData, kycDocUrl: res.data.url });
+            }
+        } catch (err: any) {
+            console.error("Upload failed", err);
+            alert(err.response?.data?.error?.message || "Failed to upload document. Please try again.");
+        } finally {
+            isBusiness ? setUploadingDoc(false) : setUploadingKyc(false);
         }
     };
 
@@ -57,28 +105,28 @@ export default function SellerOnboarding() {
             const fileData = new FormData();
             fileData.append("file", file);
             fileData.append("folder", "kyc");
-            const token = document.cookie.split("; ").find(row => row.startsWith("token="))?.split("=")[1] || "";
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-            const res = await fetch(`${API_URL}/upload`, {
-                method: "POST",
-                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                body: fileData
-            });
-            const data = await res.json();
+
+            const data = await api.upload<any>("/upload", fileData);
+
             if (data.url) {
-                if (isBusiness) setFormData({...formData, businessDocUrl: data.url});
-                else setFormData({...formData, kycDocUrl: data.url});
+                if (isBusiness) setFormData({ ...formData, businessDocUrl: data.url });
+                else setFormData({ ...formData, kycDocUrl: data.url });
             }
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error("Direct upload error:", error);
+            alert(error.message || "Failed to upload document. Please try again.");
         } finally {
             isBusiness ? setUploadingDoc(false) : setUploadingKyc(false);
         }
     };
 
     const handleSubmit = async () => {
+        if (!formData.businessName || !formData.founderName || !formData.email || !formData.phone) {
+            return alert("Missing required fields. Please go back and verify all steps.");
+        }
         setSubmitting(true);
         try {
+            // 1. Submit Profile
             await api.post("/seller/onboarding", {
                 businessName: formData.businessName,
                 businessType: 'sole_proprietor',
@@ -101,10 +149,18 @@ export default function SellerOnboarding() {
                     identityProof: formData.kycDocUrl
                 }
             });
-            setIsSuccess(true);
-        } catch {
-            // handle error
-        } finally {
+
+            // 2. Create Stripe Checkout Session
+            const data = await api.post<{ id: string; url: string }>("/seller/onboarding/pay", {});
+
+            // 3. Redirect to Stripe
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error("No checkout URL returned");
+            }
+        } catch (error: any) {
+            alert(error.response?.data?.message || error.message || "Failed to initiate payment. Please try again.");
             setSubmitting(false);
         }
     };
@@ -191,10 +247,10 @@ export default function SellerOnboarding() {
                                         <input type="text" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="John Doe" value={formData.founderName} onChange={(e) => setFormData({ ...formData, founderName: e.target.value })} />
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                         <div className="mt-8 pt-8 border-t border-border/50 flex items-center justify-between">
-                            <button onClick={prevStep} disabled={step === 1} className={`px-6 py-3 font-semibold rounded-xl transition-all ${step === 1 ? 'opacity-0 pointer-events-none' : 'glass-panel hover:bg-muted text-foreground'}`}>Back</button>
-
+                                        <div className="space-y-2">
                                             <label className="text-sm font-semibold">Business Email</label>
+                                            <input type="email" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="contact@company.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                                        </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-semibold">Phone</label>
                                             <input type="tel" className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all" placeholder="+91 98765 43210" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
@@ -208,104 +264,101 @@ export default function SellerOnboarding() {
                             </div>
                         )}
 
-        }
-    }
+                        {step === 3 && (
+                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                                <h2 className="text-2xl font-heading font-bold mb-2">Document Verification</h2>
+                                <p className="text-sm text-muted-foreground mb-6">Upload clear scans of your official business documents.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    {/* Business Doc */}
+                                    <div onClick={() => docInputRef.current?.click()} className={`border-2 border-dashed ${formData.businessDocUrl ? 'border-emerald-500 bg-emerald-500/5' : 'border-border'} rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer group relative`}>
+                                        <input type="file" ref={docInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { if (e.target.files?.[0]) uploadDirect(e.target.files[0], 'business') }} />
 
-                            {step === 3 && (
-                                <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
-                                    <h2 className="text-2xl font-heading font-bold mb-2">Document Verification</h2>
-                                    <p className="text-sm text-muted-foreground mb-6">Upload clear scans of your official business documents.</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                        {/* Business Doc */}
-                                        <div onClick={() => docInputRef.current?.click()} className={`border-2 border-dashed ${formData.businessDocUrl ? 'border-emerald-500 bg-emerald-500/5' : 'border-border'} rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer group relative`}>
-                                            <input type="file" ref={docInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { if (e.target.files?.[0]) uploadDirect(e.target.files[0], 'business') }} />
-
-                                            <div className={`w-12 h-12 rounded-full glass-panel flex items-center justify-center transition-colors ${formData.businessDocUrl ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent'}`}>
-                                                {uploadingDoc ? <Loader2 className="h-6 w-6 animate-spin" /> : formData.businessDocUrl ? <CheckCircle2 className="h-6 w-6" /> : <UploadCloud className="h-6 w-6" />}
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold text-sm">Certificate of Incorporation</h4>
-                                                <p className="text-xs text-muted-foreground mt-1">{formData.businessDocUrl ? 'Uploaded Successfully' : 'PDF, JPG or PNG (Max 5MB)'}</p>
-                                            </div>
+                                        <div className={`w-12 h-12 rounded-full glass-panel flex items-center justify-center transition-colors ${formData.businessDocUrl ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent'}`}>
+                                            {uploadingDoc ? <Loader2 className="h-6 w-6 animate-spin" /> : formData.businessDocUrl ? <CheckCircle2 className="h-6 w-6" /> : <UploadCloud className="h-6 w-6" />}
                                         </div>
-
-                                        {/* KYC Doc */}
-                                        <div onClick={() => kycInputRef.current?.click()} className={`border-2 border-dashed ${formData.kycDocUrl ? 'border-emerald-500 bg-emerald-500/5' : 'border-border'} rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer group relative`}>
-                                            <input type="file" ref={kycInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { if (e.target.files?.[0]) uploadDirect(e.target.files[0], 'kyc') }} />
-
-                                            <div className={`w-12 h-12 rounded-full glass-panel flex items-center justify-center transition-colors ${formData.kycDocUrl ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent'}`}>
-                                                {uploadingKyc ? <Loader2 className="h-6 w-6 animate-spin" /> : formData.kycDocUrl ? <CheckCircle2 className="h-6 w-6" /> : <UploadCloud className="h-6 w-6" />}
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold text-sm">PAN / Aadhaar Card</h4>
-                                                <p className="text-xs text-muted-foreground mt-1">{formData.kycDocUrl ? 'Uploaded Successfully' : 'Founder or Authorized Rep'}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {step === 4 && (
-                                <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
-                                    <div className="text-center mb-8">
-                                        <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-                                        </div>
-                                        <h2 className="text-2xl font-heading font-bold mb-2">Final Review & Agreement</h2>
-                                        <p className="text-muted-foreground">Review the SarvaHub Authenticity Pledge before submitting.</p>
-                                    </div>
-                                    <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 h-56 overflow-y-auto custom-scrollbar mb-6 text-sm text-foreground space-y-4">
-                                        <h4 className="font-bold">1. The SarvaHub Authenticity Standard</h4>
-                                        <p>Every item listed must be 100% authentic, legally sourced, and match the exact description provided.</p>
-                                        <h4 className="font-bold">2. Penalties for Counterfeits</h4>
-                                        <p>Selling counterfeit goods results in immediate account termination and legal action.</p>
-                                        <h4 className="font-bold">3. Returns and Refunds</h4>
-                                        <p>Sellers must adhere to platform return and refund policies.</p>
-                                        <h4 className="font-bold">4. Fees</h4>
-                                        <p>One-time registration fee of ₹10. Platform commission: 8% per transaction.</p>
-                                    </div>
-                                    <label className="flex items-start gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted transition-colors">
-                                        <input type="checkbox" className="mt-1 w-5 h-5 text-accent rounded border-gray-300 focus:ring-accent" checked={formData.agreeToTerms} onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })} />
                                         <div>
-                                            <span className="font-bold block">I agree to the Authenticity Pledge and Platform Terms</span>
-                                            <span className="text-xs text-muted-foreground mt-1 block">I confirm that all provided information is legally accurate.</span>
+                                            <h4 className="font-semibold text-sm">Certificate of Incorporation</h4>
+                                            <p className="text-xs text-muted-foreground mt-1">{formData.businessDocUrl ? 'Uploaded Successfully' : 'PDF, JPG or PNG (Max 5MB)'}</p>
                                         </div>
-                                    </label>
-                                </div>
-                            )}
+                                    </div>
 
-                            {step === 5 && !isSuccess && (
-                                <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
-                                    <div className="text-center mb-6">
-                                        <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <CreditCard className="h-8 w-8 text-accent" />
-                                        </div>
-                                        <h2 className="text-2xl font-heading font-bold mb-2">Registration Fee</h2>
-                                        <p className="text-muted-foreground">Complete the one-time onboarding payment of ₹10.</p>
-                                    </div>
-                                    <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 space-y-6 max-w-md mx-auto">
-                                        <div className="text-center p-8 bg-muted/30 rounded-xl">
-                                            <p className="text-5xl font-black text-foreground mb-2">₹10</p>
-                                            <p className="text-sm text-muted-foreground">One-time registration fee</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                                    {/* KYC Doc */}
+                                    <div onClick={() => kycInputRef.current?.click()} className={`border-2 border-dashed ${formData.kycDocUrl ? 'border-emerald-500 bg-emerald-500/5' : 'border-border'} rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer group relative`}>
+                                        <input type="file" ref={kycInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { if (e.target.files?.[0]) uploadDirect(e.target.files[0], 'kyc') }} />
 
-                            {isSuccess && (
-                                <div className="text-center py-12 animate-in fade-in duration-500">
-                                    <div className="w-32 h-32 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
-                                        <Check className="h-16 w-16 text-emerald-500" />
+                                        <div className={`w-12 h-12 rounded-full glass-panel flex items-center justify-center transition-colors ${formData.kycDocUrl ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent'}`}>
+                                            {uploadingKyc ? <Loader2 className="h-6 w-6 animate-spin" /> : formData.kycDocUrl ? <CheckCircle2 className="h-6 w-6" /> : <UploadCloud className="h-6 w-6" />}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-sm">PAN / Aadhaar Card</h4>
+                                            <p className="text-xs text-muted-foreground mt-1">{formData.kycDocUrl ? 'Uploaded Successfully' : 'Founder or Authorized Rep'}</p>
+                                        </div>
                                     </div>
-                                    <h2 className="text-3xl font-heading font-black mb-4">Application Submitted!</h2>
-                                    <p className="text-muted-foreground max-w-md mx-auto mb-8">
-                                        Your seller application is now under review. Our team will get back to you within 48 hours.
-                                    </p>
-                                    <button onClick={() => router.push('/seller/dashboard')} className="px-8 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 mx-auto">
-                                        Go to Dashboard
-                                    </button>
                                 </div>
-                            )}
+                            </div>
+                        )}
+
+                        {step === 4 && (
+                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                                <div className="text-center mb-8">
+                                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+                                    </div>
+                                    <h2 className="text-2xl font-heading font-bold mb-2">Final Review & Agreement</h2>
+                                    <p className="text-muted-foreground">Review the SarvaHub Authenticity Pledge before submitting.</p>
+                                </div>
+                                <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 h-56 overflow-y-auto custom-scrollbar mb-6 text-sm text-foreground space-y-4">
+                                    <h4 className="font-bold">1. The SarvaHub Authenticity Standard</h4>
+                                    <p>Every item listed must be 100% authentic, legally sourced, and match the exact description provided.</p>
+                                    <h4 className="font-bold">2. Penalties for Counterfeits</h4>
+                                    <p>Selling counterfeit goods results in immediate account termination and legal action.</p>
+                                    <h4 className="font-bold">3. Returns and Refunds</h4>
+                                    <p>Sellers must adhere to platform return and refund policies.</p>
+                                    <h4 className="font-bold">4. Fees</h4>
+                                    <p>One-time registration fee of ₹10. Platform commission: 8% per transaction.</p>
+                                </div>
+                                <label className="flex items-start gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted transition-colors">
+                                    <input type="checkbox" className="mt-1 w-5 h-5 text-accent rounded border-gray-300 focus:ring-accent" checked={formData.agreeToTerms} onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })} />
+                                    <div>
+                                        <span className="font-bold block">I agree to the Authenticity Pledge and Platform Terms</span>
+                                        <span className="text-xs text-muted-foreground mt-1 block">I confirm that all provided information is legally accurate.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        )}
+
+                        {step === 5 && !isSuccess && (
+                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                                <div className="text-center mb-6">
+                                    <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <CreditCard className="h-8 w-8 text-accent" />
+                                    </div>
+                                    <h2 className="text-2xl font-heading font-bold mb-2">Registration Fee</h2>
+                                    <p className="text-muted-foreground">Complete the one-time onboarding payment of ₹10.</p>
+                                </div>
+                                <div className="glass-panel p-6 rounded-2xl border-border bg-background/50 space-y-6 max-w-md mx-auto">
+                                    <div className="text-center p-8 bg-muted/30 rounded-xl">
+                                        <p className="text-5xl font-black text-foreground mb-2">₹10</p>
+                                        <p className="text-sm text-muted-foreground">One-time registration fee</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {isSuccess && (
+                            <div className="text-center py-12 animate-in fade-in duration-500">
+                                <div className="w-32 h-32 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
+                                    <Check className="h-16 w-16 text-emerald-500" />
+                                </div>
+                                <h2 className="text-3xl font-heading font-black mb-4">Application Submitted!</h2>
+                                <p className="text-muted-foreground max-w-md mx-auto mb-8">
+                                    Your seller application is now under review. Our team will get back to you within 48 hours.
+                                </p>
+                                <button onClick={() => router.push('/seller/dashboard')} className="px-8 py-3 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 mx-auto">
+                                    Go to Dashboard
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {!isSuccess && (

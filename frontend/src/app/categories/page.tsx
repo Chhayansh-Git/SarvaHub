@@ -6,37 +6,69 @@ import { useEffect, useState } from "react";
 
 const FALLBACK_CATEGORIES = [
     {
-        id: "fashion",
-        title: "Fashion & Apparel",
-        description: "Discover the latest trends from top designers around the globe.",
-        image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=800",
+        id: "luxury-watches",
+        title: "Luxury Watches",
+        description: "Curated collection of Swiss and haute horlogerie timepieces",
+        image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=800",
         colSpan: "md:col-span-2",
         rowSpan: "md:row-span-2"
     },
     {
-        id: "watches",
-        title: "Luxury Watches",
-        description: "Timeless craftsmanship and precision engineering for the modern connoisseur.",
-        image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=600",
+        id: "fine-jewelry",
+        title: "Fine Jewelry",
+        description: "Handcrafted pieces featuring precious stones and metals",
+        image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=600",
         colSpan: "col-span-1",
         rowSpan: "row-span-1"
     },
     {
-        id: "electronics",
-        title: "Premium Electronics",
-        description: "State-of-the-art technology wrapped in beautiful design.",
-        image: "https://images.unsplash.com/photo-1550009158-9effb6ce1774?auto=format&fit=crop&q=80&w=600",
+        id: "designer-bags",
+        title: "Designer Bags",
+        description: "Iconic designer handbags and leather goods",
+        image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&q=80&w=600",
         colSpan: "col-span-1",
         rowSpan: "row-span-1"
     },
     {
-        id: "beauty",
-        title: "Beauty & Wellness",
-        description: "Curated skincare and fragrances to elevate your daily routine.",
-        image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=1200",
+        id: "premium-audio",
+        title: "Premium Audio",
+        description: "High-fidelity audio equipment for audiophiles",
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=600",
+        colSpan: "col-span-1",
+        rowSpan: "row-span-1"
+    },
+    {
+        id: "fragrances",
+        title: "Fragrances",
+        description: "Luxury perfumes and niche fragrances",
+        image: "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600",
+        colSpan: "col-span-1",
+        rowSpan: "row-span-1"
+    },
+    {
+        id: "sunglasses",
+        title: "Sunglasses",
+        description: "Designer eyewear from top luxury brands",
+        image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&q=80&w=600",
+        colSpan: "col-span-1",
+        rowSpan: "row-span-1"
+    },
+    {
+        id: "luxury-pens",
+        title: "Luxury Pens",
+        description: "Fine writing instruments from prestigious brands",
+        image: "https://images.unsplash.com/photo-1585336261022-680e295ce3fe?auto=format&fit=crop&q=80&w=600",
+        colSpan: "col-span-1",
+        rowSpan: "row-span-1"
+    },
+    {
+        id: "home-decor",
+        title: "Home Décor",
+        description: "Curated luxury items for your living space",
+        image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=1200",
         colSpan: "md:col-span-2",
         rowSpan: "row-span-1"
-    }
+    },
 ];
 
 export default function CategoriesPage() {
@@ -48,10 +80,16 @@ export default function CategoriesPage() {
             try {
                 const { api } = await import('@/lib/api');
                 const data = await api.get<any>('/categories');
-                // Ensure the returned data is an array and adapt styling properties if needed
                 const formattedList = Array.isArray(data) ? data : (data.categories || []);
                 if (formattedList.length > 0) {
-                    setCategories(formattedList);
+                    // Assign bento grid layout: first and last items span 2 columns
+                    const withLayout = formattedList.map((cat: any, idx: number) => ({
+                        ...cat,
+                        title: cat.title || cat.name,
+                        colSpan: (idx === 0 || idx === formattedList.length - 1) ? 'md:col-span-2' : 'col-span-1',
+                        rowSpan: idx === 0 ? 'md:row-span-2' : 'row-span-1',
+                    }));
+                    setCategories(withLayout);
                 } else {
                     setCategories(FALLBACK_CATEGORIES);
                 }

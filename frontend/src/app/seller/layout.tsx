@@ -1,20 +1,50 @@
 "use client";
 
-import { LineChart, BarChart3, Package, Users, Settings, LogOut, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LineChart, BarChart3, Package, Users, Settings, LogOut, ChevronRight, Tag } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUserStore } from "@/store/userStore";
 
 import { SellerNavbar } from "@/components/seller/layout/SellerNavbar";
 import { SellerFooter } from "@/components/seller/layout/SellerFooter";
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { user, logout } = useUserStore();
+    const [isHydrated, setIsHydrated] = useState(false);
+
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
+
+    // Auth guard: only sellers, admins, and users on the onboarding flow can access seller routes
+    useEffect(() => {
+        if (!isHydrated) return;
+
+        const isOnboarding = pathname.includes('/onboarding');
+        if (!user) {
+            // Not logged in — redirect to home
+            if (!isOnboarding) router.replace('/');
+            return;
+        }
+        if (!isOnboarding && user.role !== 'seller' && user.role !== 'admin') {
+            router.replace('/');
+        }
+    }, [user, pathname, router, isHydrated]);
+
+    const handleLogout = () => {
+        logout();
+        router.push('/');
+    };
 
     const navItems = [
         { label: "Dashboard", href: "/seller/dashboard", icon: LineChart },
         { label: "Listings", href: "/seller/listings", icon: Package },
         { label: "Orders", href: "/seller/orders", icon: BarChart3 },
         { label: "Customers", href: "/seller/customers", icon: Users },
+        { label: "Offers & Discounts", href: "/seller/discounts", icon: Tag },
         { label: "Settings", href: "/seller/settings", icon: Settings },
     ];
 

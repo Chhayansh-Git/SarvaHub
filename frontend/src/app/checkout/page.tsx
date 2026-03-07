@@ -17,7 +17,7 @@ export default function CheckoutPage() {
     const { items, subtotal, clearCart } = useCartStore();
     const { user } = useUserStore();
 
-    const shipping = 0; // Free express shipping tier
+    const shipping = subtotal >= 499 ? 0 : 49; // Free above ₹499
     const taxes = useMemo(() => Math.round(subtotal * 0.18 * 100) / 100, [subtotal]); // 18% GST
     const total = useMemo(() => subtotal + shipping + taxes, [subtotal, taxes]);
 
@@ -32,6 +32,22 @@ export default function CheckoutPage() {
     });
 
     const handlePlaceOrder = async () => {
+        if (!shippingData.firstName || !shippingData.lastName || !shippingData.address || !shippingData.city || !shippingData.email || !shippingData.pincode) {
+            alert('Please fill out all shipping fields.');
+            setStep(1);
+            return;
+        }
+        if (!/^\d{6}$/.test(shippingData.pincode)) {
+            alert('Please enter a valid 6-digit PIN code.');
+            setStep(1);
+            return;
+        }
+        if (!/^\S+@\S+\.\S+$/.test(shippingData.email)) {
+            alert('Please enter a valid email address.');
+            setStep(1);
+            return;
+        }
+
         setIsProcessing(true);
         try {
             const data = await api.post<{ orderId: string; order: any }>('/checkout/intent', {
@@ -50,17 +66,31 @@ export default function CheckoutPage() {
                     city: shippingData.city,
                 },
             });
-            setOrderId(data.orderId || 'SVH-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+            setOrderId(data.orderId || data.order?._id || 'PENDING');
             clearCart();
             setStep(3);
-        } catch {
-            // Fallback — show success anyway for demo
-            setOrderId('SVH-' + Math.random().toString(36).substring(2, 8).toUpperCase());
-            clearCart();
-            setStep(3);
+        } catch (error: any) {
+            // Show error instead of faking success
+            alert(error.message || 'Payment failed. Please try again.');
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const handleContinueToPayment = () => {
+        if (!shippingData.firstName || !shippingData.lastName || !shippingData.address || !shippingData.city || !shippingData.email || !shippingData.pincode) {
+            alert('Please fill out all shipping fields.');
+            return;
+        }
+        if (!/^\d{6}$/.test(shippingData.pincode)) {
+            alert('Please enter a valid 6-digit PIN code.');
+            return;
+        }
+        if (!/^\S+@\S+\.\S+$/.test(shippingData.email)) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+        setStep(2);
     };
 
     // Redirect if cart is empty and not on success step
@@ -137,7 +167,7 @@ export default function CheckoutPage() {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => setStep(2)}
+                                        onClick={handleContinueToPayment}
                                         className="w-full py-4 mt-4 bg-foreground text-background font-bold text-lg rounded-xl flex items-center justify-center hover:bg-primary transition-colors shadow-lg"
                                     >
                                         Continue to Payment

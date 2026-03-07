@@ -5,13 +5,13 @@ import { useMemo } from "react";
 
 // Mock data
 const mockData = [
-    { date: "Mon", revenue: 12000 },
-    { date: "Tue", revenue: 19000 },
-    { date: "Wed", revenue: 15000 },
-    { date: "Thu", revenue: 28000 },
-    { date: "Fri", revenue: 22000 },
-    { date: "Sat", revenue: 35000 },
-    { date: "Sun", revenue: 42000 },
+    { date: "Mon", revenue: 0 },
+    { date: "Tue", revenue: 0 },
+    { date: "Wed", revenue: 0 },
+    { date: "Thu", revenue: 0 },
+    { date: "Fri", revenue: 0 },
+    { date: "Sat", revenue: 0 },
+    { date: "Sun", revenue: 0 },
 ];
 
 export function RevenueChart() {
@@ -19,7 +19,9 @@ export function RevenueChart() {
 
     // Responsive SVG calculation logic (Simplified for aesthetics)
     const points = useMemo(() => {
-        const maxRev = Math.max(...mockData.map(d => d.revenue));
+        const rawMax = Math.max(...mockData.map(d => d.revenue));
+        const maxRev = rawMax === 0 ? 100 : rawMax;
+
         return mockData.map((d, i) => {
             const x = (i / (mockData.length - 1)) * 100;
             const y = 100 - ((d.revenue / maxRev) * 80); // Leave a 20% margin at the top
@@ -71,7 +73,10 @@ export function RevenueChart() {
                     {/* Data Points */}
                     {points.split(" ").map((p, i) => {
                         const [x, y] = p.split(",");
-                        const isMax = mockData[i].revenue === Math.max(...mockData.map(d => d.revenue));
+                        const rawMax = Math.max(...mockData.map(d => d.revenue));
+                        // Only highlight max point if revenue > 0
+                        const isMax = rawMax > 0 && mockData[i].revenue === rawMax;
+
                         return (
                             <g key={i}>
                                 <circle

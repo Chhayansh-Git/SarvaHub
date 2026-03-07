@@ -16,6 +16,13 @@ export async function getTickets(req: Request, res: Response, next: NextFunction
 export async function createTicket(req: Request, res: Response, next: NextFunction) {
     try {
         const { subject, category, priority, message, orderId } = req.body;
+
+        if (!subject || typeof subject !== 'string' || subject.trim().length === 0) {
+            return next(new AppError(400, 'BAD_REQUEST', 'Subject is required.'));
+        }
+        if (!message || typeof message !== 'string' || message.trim().length === 0) {
+            return next(new AppError(400, 'BAD_REQUEST', 'Message is required.'));
+        }
         const ticket = await SupportTicket.create({
             user: req.user!.id,
             subject,

@@ -9,21 +9,42 @@ import { useUserStore } from "@/store/userStore";
 import { useCartStore } from "@/store/cartStore";
 import { OmniSearchBar } from "@/components/search/OmniSearchBar";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { api } from "@/lib/api";
+
+interface Category {
+    id: string;
+    _id?: string;
+    name: string;
+    slug: string;
+}
 
 export function Navbar() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
     const pathname = usePathname();
     const { isAuthenticated, openAuthModal } = useUserStore();
     const itemCount = useCartStore(state => state.itemCount);
     const fetchCart = useCartStore(state => state.fetchCart);
 
     useEffect(() => {
-        // eslint-disable-next-line
         setMounted(true);
         // Fetch cart on mount when authenticated
         if (isAuthenticated) fetchCart();
+
+        // Fetch categories
+        const loadCategories = async () => {
+            try {
+                const data = await api.get<{ categories: Category[] }>('/categories');
+                setCategories(data.categories || []);
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+                // Fallback to empty array if fetch fails
+                setCategories([]);
+            }
+        };
+        loadCategories();
     }, [isAuthenticated, fetchCart]);
 
     // Hide consumer navbar on seller routes
@@ -44,15 +65,29 @@ export function Navbar() {
                     </Link>
 
                     {/* Desktop Navigation Links */}
-                    <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
+                    <nav className="hidden md:flex items-center gap-6 text-sm font-semibold h-full">
+                        <div className="relative group h-full flex items-center">
+                            <Link href="/categories" className="text-muted-foreground hover:text-foreground transition-colors py-4">
+                                Categories
+                            </Link>
+                            <div className="absolute top-[80px] left-[-20px] w-56 bg-white dark:bg-zinc-900 border border-border rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 p-2 flex flex-col z-[100]">
+                                {categories.length > 0 ? (
+                                    categories.map((category) => (
+                                        <Link
+                                            key={category.id || category._id || category.slug}
+                                            href={`/search?category=${encodeURIComponent(category.name)}`}
+                                            className="px-4 py-2.5 text-sm hover:bg-accent/10 rounded-lg hover:text-accent font-medium transition-colors"
+                                        >
+                                            {category.name}
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="px-4 py-2.5 text-sm text-muted-foreground">Loading categories...</div>
+                                )}
+                            </div>
+                        </div>
                         <Link href="/account/orders" className="text-muted-foreground hover:text-foreground transition-colors">
                             My Orders
-                        </Link>
-                        <Link href="/support/tickets" className="text-muted-foreground hover:text-foreground transition-colors">
-                            Support Tickets
-                        </Link>
-                        <Link href="/seller" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-                            Sell on SarvaHub <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full uppercase">New</span>
                         </Link>
                     </nav>
 

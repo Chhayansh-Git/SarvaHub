@@ -81,3 +81,86 @@ export const webhookLimiter = rateLimit({
         },
     },
 });
+
+// ─── Content Limiters ───────────────────────────────────────────────
+export const uploadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5,                   // 5 uploads per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: {
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many file uploads. Please try again later.',
+        },
+    },
+});
+
+export const supportLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 15,                  // 15 support requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: {
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many support requests. Please try again later.',
+        },
+    },
+});
+
+export const feedbackLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10,                  // 10 feedback submissions per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: {
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many feedback submissions. Please try again later.',
+        },
+    },
+});
+
+// ─── Admin Limiter ──────────────────────────────────────────────────
+// Strict: protects high-value admin endpoints
+export const adminLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: {
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many admin requests. Please try again later.',
+        },
+    },
+});
+
+// ─── Cart Limiter ───────────────────────────────────────────────────
+export const cartLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: {
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many cart requests. Please try again later.',
+        },
+    },
+});
+
+// ─── Order Limiter ──────────────────────────────────────────────────
+export const orderLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: {
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many order requests. Please try again later.',
+        },
+    },
+});

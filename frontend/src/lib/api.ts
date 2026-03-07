@@ -7,6 +7,7 @@
  * - Parses JSON and throws structured errors matching the backend contract
  * - Handles 401 → auto-logout
  */
+import { useUserStore } from '@/store/userStore';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -31,6 +32,16 @@ export class ApiRequestError extends Error {
 
 function getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
+
+    // 1. Try reading directly from memory to bypass strict browser storage policies
+    try {
+        const memoryToken = useUserStore.getState().accessToken;
+        if (memoryToken) return memoryToken;
+    } catch {
+        // ignore
+    }
+
+    // 2. Fallback to localStorage
     try {
         const raw = localStorage.getItem('auth-storage');
         if (!raw) return null;
@@ -57,11 +68,11 @@ function handleUnauthorized() {
             localStorage.setItem('auth-storage', JSON.stringify(parsed));
         }
         // Reload to reflect logged-out state
-        window.location.reload();
+        window.location.href = '/';
     } catch {
         // Fallback
         localStorage.removeItem('auth-storage');
-        window.location.reload();
+        window.location.href = '/';
     }
 }
 
@@ -141,8 +152,8 @@ export async function apiFetch<T = unknown>(
         const code = error?.code || 'UNKNOWN_ERROR';
         const message = error?.message || `Request failed with status ${response.status}`;
 
-        // Auto-logout on 401
-        if (response.status === 401) {
+        // Auto-logout on 401, but NOT during login/register attempts where 401 just means bad credentials
+        if (response.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/register')) {
             handleUnauthorized();
         }
 

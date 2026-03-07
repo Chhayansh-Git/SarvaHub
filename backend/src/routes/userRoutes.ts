@@ -7,6 +7,7 @@ import {
     getPaymentMethods,
     addPaymentMethod,
     deletePaymentMethod,
+    changePassword,
 } from '../controllers/userController';
 
 const router = Router();
@@ -15,6 +16,7 @@ router.use(authenticate);
 
 // Profile
 router.patch('/me', updateProfile);
+router.post('/change-password', changePassword);
 
 // Notification preferences
 router.get('/me/notifications', getNotificationPreferences);

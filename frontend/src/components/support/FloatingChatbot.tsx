@@ -158,7 +158,7 @@ export function FloatingChatbot() {
                         </button>
                     </form>
                     <div className="text-center mt-3">
-                        <Link href="/support/tickets" className="text-xs text-muted-foreground hover:text-accent font-medium transition-colors">
+                        <Link href="/support" className="text-xs text-muted-foreground hover:text-accent font-medium transition-colors">
                             Leave a message instead
                         </Link>
                     </div>

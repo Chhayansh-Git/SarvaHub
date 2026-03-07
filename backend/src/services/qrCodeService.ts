@@ -10,29 +10,59 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 }
 
 /**
+ * Details to embed inside the QR code payload.
+ */
+export interface QrProductDetails {
+    productName: string;
+    brand: string;
+    price: number;
+    originalPrice?: number;
+    category?: string;
+    sellerName: string;
+    sellerId: string;
+    authenticity: string;
+    productUrl: string;
+}
+
+/**
  * QR Code Engine Service.
  *
- * Generates a QR code image from a product URL and "uploads" it
- * to a simulated S3 bucket (local filesystem), returning a CDN-style
- * public URL string.
- *
- * In production, replace the local fs.writeFile with an actual S3/GCS upload.
+ * Generates a QR code image that embeds full product+seller details
+ * as a JSON payload. This makes each QR code self-contained for
+ * authenticity verification when scanned.
  */
 export class QrCodeService {
     /**
-     * Generates a QR code PNG image buffer from a product URL.
-     *
-     * @param productUrl - The full URL to encode (e.g., https://sarvahub.com/products/chronograph-automatic-42mm)
-     * @returns PNG image buffer
+     * Builds the JSON data string to encode inside the QR.
      */
-    static async generateBuffer(productUrl: string): Promise<Buffer> {
-        const buffer = await QRCode.toBuffer(productUrl, {
+    private static buildPayload(details: QrProductDetails): string {
+        return JSON.stringify({
+            platform: 'SarvaHub',
+            product: details.productName,
+            brand: details.brand,
+            price: details.price,
+            originalPrice: details.originalPrice,
+            category: details.category,
+            seller: details.sellerName,
+            sellerId: details.sellerId,
+            authenticity: details.authenticity,
+            url: details.productUrl,
+            generatedAt: new Date().toISOString(),
+        });
+    }
+
+    /**
+     * Generates a QR code PNG image buffer from product details.
+     */
+    static async generateBuffer(details: QrProductDetails): Promise<Buffer> {
+        const payload = this.buildPayload(details);
+        const buffer = await QRCode.toBuffer(payload, {
             type: 'png',
             width: 512,
             margin: 2,
             color: {
-                dark: '#1F2937',   // Dark charcoal
-                light: '#FFFFFF',  // White background
+                dark: '#1F2937',
+                light: '#FFFFFF',
             },
             errorCorrectionLevel: 'H',
         });
@@ -40,36 +70,40 @@ export class QrCodeService {
     }
 
     /**
-     * Generates a QR code and simulates uploading it to cloud storage.
-     *
-     * @param productId - The product's unique ID (e.g., prod_x8922)
-     * @param productUrl - The full product page URL
-     * @returns A CDN-style public URL for the QR code image
+     * Generates a QR code and uploads it.
+     * Tries Cloudinary first; falls back to local filesystem.
      */
-    static async generateAndUpload(productId: string, productUrl: string): Promise<string> {
-        const buffer = await this.generateBuffer(productUrl);
+    static async generateAndUpload(productId: string, details: QrProductDetails): Promise<string> {
+        const buffer = await this.generateBuffer(details);
 
-        // Simulate S3 upload by writing to local filesystem
+        // Try Cloudinary upload
+        try {
+            const cloudinary = (await import('cloudinary')).v2;
+            const result: any = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { folder: 'sarvahub/qrcodes', public_id: `${productId}_qr`, format: 'png' },
+                    (err: any, result: any) => (err ? reject(err) : resolve(result))
+                );
+                stream.end(buffer);
+            });
+            return result.secure_url;
+        } catch {
+            // Cloudinary not configured — fall back to local filesystem
+        }
+
+        // Fallback: local filesystem
         const filename = `${productId}_qr.png`;
         const filePath = path.join(UPLOAD_DIR, filename);
-
         await fs.promises.writeFile(filePath, buffer);
-
-        // Return a CDN-style URL (in production, this would be the actual S3 URL)
-        const publicUrl = `${config.cdnBaseUrl}/qr/${filename}`;
-
-        return publicUrl;
+        return `${config.cdnBaseUrl}/qr/${filename}`;
     }
 
     /**
      * Generates a QR code as a Base64 data URL string.
-     * Useful for embedding directly in HTML or returning in API responses.
-     *
-     * @param productUrl - The URL to encode
-     * @returns Base64 data URL (e.g., data:image/png;base64,...)
      */
-    static async generateDataUrl(productUrl: string): Promise<string> {
-        const dataUrl = await QRCode.toDataURL(productUrl, {
+    static async generateDataUrl(details: QrProductDetails): Promise<string> {
+        const payload = this.buildPayload(details);
+        const dataUrl = await QRCode.toDataURL(payload, {
             width: 512,
             margin: 2,
             color: {
@@ -81,3 +115,4 @@ export class QrCodeService {
         return dataUrl;
     }
 }
+

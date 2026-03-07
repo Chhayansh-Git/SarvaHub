@@ -63,10 +63,10 @@ export default function ProductDetail() {
     const params = useParams();
     const slug = params.slug as string;
 
-    const [product, setProduct] = useState<any>(FALLBACK_PRODUCT);
+    const [product, setProduct] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
-    const [selectedColor, setSelectedColor] = useState(product.colors?.[0]);
+    const [selectedColor, setSelectedColor] = useState<{ name: string; hex: string } | null>(null);
     const [addingToBag, setAddingToBag] = useState(false);
 
     const { isAuthenticated, openAuthModal } = useUserStore();
@@ -85,25 +85,24 @@ export default function ProductDetail() {
                     images: Array.isArray(data.images)
                         ? data.images.map((img: any) => typeof img === 'string' ? img : img.url)
                         : FALLBACK_PRODUCT.images,
-                    colors: data.colors || FALLBACK_PRODUCT.colors,
+                    colors: data.colors || [],
                     authenticity: {
                         verified: data.authenticity?.verified ?? true,
                         batch: data.authenticity?.batchId || data.authenticity?.batch || "N/A",
                         origin: data.authenticity?.origin || "India",
                     },
-                    seller: data.seller || FALLBACK_PRODUCT.seller,
+                    seller: data.seller || null,
                     returnPolicy: data.returnPolicy ? {
                         type: data.returnPolicy.type || "Conditional Return",
                         window: data.returnPolicy.windowDays ? `${data.returnPolicy.windowDays} Days` : "7 Days",
                         conditions: data.returnPolicy.conditions || "",
                         eligible: data.returnPolicy.eligible !== false,
-                    } : FALLBACK_PRODUCT.returnPolicy,
+                    } : null,
                 };
                 setProduct(normalized);
                 if (normalized.colors?.[0]) setSelectedColor(normalized.colors[0]);
             } catch {
-                // Use fallback product
-                setProduct(FALLBACK_PRODUCT);
+                setProduct(null);
             } finally {
                 setIsLoading(false);
             }
@@ -118,11 +117,31 @@ export default function ProductDetail() {
         }
         setAddingToBag(true);
         try {
-            await addItem(product.id, 1, selectedColor?.name);
+            await addItem(product.id || product._id, 1, selectedColor?.name);
         } catch {
             // Error is handled by store
         } finally {
             setAddingToBag(false);
+        }
+    };
+
+    const handleWishlist = async () => {
+        if (!isAuthenticated) {
+            openAuthModal('login');
+            return;
+        }
+        try {
+            await api.post('/wishlist', {
+                productId: product.id || product._id,
+                name: product.name,
+                brand: product.brand,
+                price: product.price,
+                image: product.images?.[0]?.url || product.images?.[0] || '',
+                slug: product.slug || '',
+            });
+            alert("Saved to wishlist!");
+        } catch (error) {
+            console.error(error);
         }
     };
 
@@ -237,26 +256,28 @@ export default function ProductDetail() {
                         </p>
 
                         {/* Attributes Selector */}
-                        <div className="mb-10 space-y-6">
-                            <div>
-                                <div className="flex justify-between items-center mb-3">
-                                    <span className="font-semibold text-sm">Select Color</span>
-                                    <span className="text-muted-foreground text-sm">{selectedColor.name}</span>
-                                </div>
-                                <div className="flex gap-4">
-                                    {product.colors.map((color: any) => (
-                                        <button
-                                            key={color.name}
-                                            onClick={() => setSelectedColor(color)}
-                                            className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${selectedColor.name === color.name ? 'ring-2 ring-accent ring-offset-4 ring-offset-background scale-110' : 'hover:scale-105 hover:ring-2 hover:ring-border hover:ring-offset-2 hover:ring-offset-background'
-                                                }`}
-                                            style={{ backgroundColor: color.hex }}
-                                            title={color.name}
-                                        />
-                                    ))}
+                        {product.colors?.length > 0 && (
+                            <div className="mb-10 space-y-6">
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="font-semibold text-sm">Select Color</span>
+                                        <span className="text-muted-foreground text-sm">{selectedColor?.name || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        {product.colors.map((color: any) => (
+                                            <button
+                                                key={color.name}
+                                                onClick={() => setSelectedColor(color)}
+                                                className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${selectedColor?.name === color.name ? 'ring-2 ring-accent ring-offset-4 ring-offset-background scale-110' : 'hover:scale-105 hover:ring-2 hover:ring-border hover:ring-offset-2 hover:ring-offset-background'
+                                                    }`}
+                                                style={{ backgroundColor: color.hex }}
+                                                title={color.name}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 mb-10">
@@ -267,7 +288,10 @@ export default function ProductDetail() {
                                 <ShoppingBag className="h-5 w-5" />
                                 Add to Bag
                             </button>
-                            <button className="py-4 px-6 glass-panel border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors hover:text-accent group">
+                            <button
+                                onClick={handleWishlist}
+                                className="py-4 px-6 glass-panel border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors hover:text-accent group"
+                            >
                                 <Heart className="h-6 w-6 group-hover:fill-accent transition-colors" />
                             </button>
                         </div>
@@ -275,7 +299,11 @@ export default function ProductDetail() {
                         {/* Share via QR & Social Layer */}
                         <div className="mb-12 py-6 border-y border-border/50">
                             <h4 className="text-sm font-semibold mb-4">Share this masterpiece</h4>
-                            <ShareProduct productUrl={typeof window !== 'undefined' ? window.location.href : 'https://sarvahub.com/products/cx-auto-42'} productName={product.name} />
+                            <ShareProduct
+                                productUrl={typeof window !== 'undefined' ? window.location.href : 'https://sarvahub.com/products/cx-auto-42'}
+                                productName={product.name}
+                                qrCodeUrl={product.qrCodeUrl}
+                            />
                         </div>
 
                         {/* Guarantees */}

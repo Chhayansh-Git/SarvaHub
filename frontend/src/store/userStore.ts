@@ -7,6 +7,7 @@ export interface User {
     email: string;
     role: 'consumer' | 'seller' | 'admin';
     avatar?: string;
+    sellerProfile?: any;
 }
 
 interface AuthState {
@@ -15,13 +16,15 @@ interface AuthState {
     isAuthenticated: boolean;
     isAuthModalOpen: boolean;
     authModalType: 'login' | 'register';
+    authModalMessage: string | null;
 
     // Actions
     login: (user: User, token: string) => void;
     logout: () => void;
     setUser: (user: Partial<User>) => void;
-    openAuthModal: (type?: 'login' | 'register') => void;
+    openAuthModal: (type?: 'login' | 'register', message?: string | null) => void;
     closeAuthModal: () => void;
+    fetchUser: () => Promise<void>;
 }
 
 export const useUserStore = create<AuthState>()(
@@ -32,12 +35,14 @@ export const useUserStore = create<AuthState>()(
             isAuthenticated: false,
             isAuthModalOpen: false,
             authModalType: 'login',
+            authModalMessage: null,
 
             login: (user, token) => set({
                 user,
                 accessToken: token,
                 isAuthenticated: true,
-                isAuthModalOpen: false
+                isAuthModalOpen: false,
+                authModalMessage: null
             }),
 
             logout: () => {
@@ -68,14 +73,32 @@ export const useUserStore = create<AuthState>()(
                 user: state.user ? { ...state.user, ...updates } : null,
             })),
 
-            openAuthModal: (type = 'login') => set({
+            openAuthModal: (type = 'login', message = null) => set({
                 isAuthModalOpen: true,
-                authModalType: type
+                authModalType: type,
+                authModalMessage: message
             }),
 
             closeAuthModal: () => set({
-                isAuthModalOpen: false
-            })
+                isAuthModalOpen: false,
+                authModalMessage: null
+            }),
+
+            fetchUser: async () => {
+                const token = get().accessToken;
+                if (!token) return;
+                try {
+                    const res = await fetch('/api/v1/auth/me', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        set({ user: data.user });
+                    }
+                } catch {
+                    // ignore
+                }
+            }
         }),
         {
             name: 'auth-storage',

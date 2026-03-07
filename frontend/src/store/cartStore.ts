@@ -36,8 +36,8 @@ interface CartState {
     // Actions
     fetchCart: () => Promise<void>;
     addItem: (productId: string, quantity?: number, color?: string, size?: string | null) => Promise<void>;
-    updateQuantity: (itemId: string, quantity: number) => Promise<void>;
-    removeItem: (itemId: string) => Promise<void>;
+    updateQuantity: (productId: string, quantity: number) => Promise<void>;
+    removeItem: (productId: string) => Promise<void>;
     clearCart: () => void;
 }
 
@@ -92,18 +92,18 @@ export const useCartStore = create<CartState>((set, get) => ({
         }
     },
 
-    updateQuantity: async (itemId, quantity) => {
+    updateQuantity: async (productId, quantity) => {
         // Optimistic update
         const prevItems = get().items;
         const updated = prevItems.map(item =>
-            item.id === itemId ? { ...item, quantity } : item
+            item.productId === productId ? { ...item, quantity } : item
         );
         const newSubtotal = updated.reduce((sum, i) => sum + i.price * i.quantity, 0);
         const newCount = updated.reduce((sum, i) => sum + i.quantity, 0);
         set({ items: updated, subtotal: newSubtotal, itemCount: newCount });
 
         try {
-            const data = await api.patch<CartResponse>(`/cart/items/${itemId}`, { quantity });
+            const data = await api.patch<CartResponse>(`/cart/items/${productId}`, { quantity });
             set({
                 items: data.items || [],
                 subtotal: data.subtotal || 0,
@@ -115,16 +115,16 @@ export const useCartStore = create<CartState>((set, get) => ({
         }
     },
 
-    removeItem: async (itemId) => {
+    removeItem: async (productId) => {
         // Optimistic update
         const prevItems = get().items;
-        const filtered = prevItems.filter(item => item.id !== itemId);
+        const filtered = prevItems.filter(item => item.productId !== productId);
         const newSubtotal = filtered.reduce((sum, i) => sum + i.price * i.quantity, 0);
         const newCount = filtered.reduce((sum, i) => sum + i.quantity, 0);
         set({ items: filtered, subtotal: newSubtotal, itemCount: newCount });
 
         try {
-            const data = await api.delete<CartResponse>(`/cart/items/${itemId}`);
+            const data = await api.delete<CartResponse>(`/cart/items/${productId}`);
             set({
                 items: data.items || [],
                 subtotal: data.subtotal || 0,

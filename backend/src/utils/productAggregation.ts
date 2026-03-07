@@ -2,6 +2,7 @@ import { PipelineStage } from 'mongoose';
 import { escapeRegex } from './escapeRegex';
 import { SearchCache } from '../models/SearchCache';
 import { generateEmbedding } from '../services/embeddingService';
+import { Category } from '../models/Category';
 
 /**
  * Query parameters matching the GET /products contract.
@@ -57,13 +58,16 @@ export async function buildProductFilterPipeline(query: ProductQueryParams) {
     let useVectorSearch = false;
     let vectorStage: PipelineStage | null = null;
 
-    if (query.q && !query.imageRef) {
+    if (query.q && !query.imageRef && process.env.ENABLE_VECTOR_SEARCH === 'true') {
         try {
             const embedding = await generateEmbedding(query.q);
 
             // Build the filter for $vectorSearch (subset of matchStage fields)
             const vectorFilter: Record<string, any> = { status: 'active' };
-            if (query.category) vectorFilter.category = query.category;
+            if (query.category) {
+                const catDoc = await Category.findOne({ name: { $regex: `^${escapeRegex(query.category)}$`, $options: 'i' } }).lean();
+                vectorFilter.category = catDoc ? catDoc._id : query.category;
+            }
             if (query.verified === true || query.verified === 'true') {
                 vectorFilter['authenticity.verified'] = true;
             }
@@ -95,9 +99,15 @@ export async function buildProductFilterPipeline(query: ProductQueryParams) {
         ];
     }
 
-    // Category filter (matches by category slug via lookup, or direct category ID)
+    // Category filter (resolve name → _id since products store category as an ID reference)
     if (query.category && !useVectorSearch) {
-        matchStage.category = query.category;
+        const cat = await Category.findOne({ name: { $regex: `^${escapeRegex(query.category)}$`, $options: 'i' } }).lean();
+        if (cat) {
+            matchStage.category = cat._id;
+        } else {
+            // Fallback: treat as direct ID match
+            matchStage.category = query.category;
+        }
     }
 
     // Brand filter

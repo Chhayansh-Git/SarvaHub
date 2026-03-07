@@ -1,149 +1,212 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Settings, Building2, Loader2, Save, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Building2, Save, Store, Loader2, CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useUserStore } from "@/store/userStore";
 
 export default function SellerSettingsPage() {
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
-    const [form, setForm] = useState({
+    const { user, fetchUser } = useUserStore();
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [formData, setFormData] = useState({
         businessName: "",
-        description: "",
-        location: "",
-        contactEmail: "",
-        contactPhone: "",
+        businessType: "sole_proprietor",
+        gstNumber: "",
+        panNumber: "",
+        founderName: "",
+        email: "",
+        phone: "",
+        address: "",
+        category: "",
     });
 
     useEffect(() => {
-        (async () => {
-            try {
-                const user = await api.get<any>("/auth/me");
-                const sp = user?.user?.sellerProfile || user?.sellerProfile || {};
-                setForm({
-                    businessName: sp.businessName || "",
-                    description: sp.description || "",
-                    location: sp.location || "",
-                    contactEmail: sp.contactEmail || "",
-                    contactPhone: sp.contactPhone || "",
-                });
-            } catch {
-                // empty
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
+        if (user?.sellerProfile) {
+            const profile = user.sellerProfile;
+            setFormData({
+                businessName: profile.businessName || "",
+                businessType: profile.businessType || "sole_proprietor",
+                gstNumber: profile.gstNumber || "",
+                panNumber: profile.panNumber || "",
+                founderName: profile.contactPerson?.name || "",
+                email: profile.contactEmail || profile.contactPerson?.email || "",
+                phone: profile.contactPhone || profile.contactPerson?.phone || "",
+                address: profile.location || profile.registeredAddress?.line1 || "",
+                category: (profile.categories && profile.categories[0]) || "",
+            });
+        }
+    }, [user]);
 
-    const handleSave = async () => {
-        setSaving(true);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setIsSuccess(false);
+
         try {
-            await api.patch("/seller/settings", form);
-            setSaved(true);
-            setTimeout(() => setSaved(false), 3000);
-        } catch {
-            // silently handle
+            await api.patch('/seller/settings', formData);
+            // Refresh user store to get updated profile
+            await fetchUser();
+            setIsSuccess(true);
+            setTimeout(() => setIsSuccess(false), 3000);
+        } catch (error: any) {
+            alert(error.response?.data?.message || error.message || "Failed to update settings");
         } finally {
-            setSaving(false);
+            setIsLoading(false);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="p-8 flex items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            </div>
-        );
-    }
+    if (!user) return null;
 
     return (
-        <div className="p-8 max-w-4xl mx-auto w-full animate-in fade-in zoom-in-95 duration-500">
-            <div className="mb-10">
-                <h1 className="text-3xl font-heading font-black tracking-tight flex items-center gap-3 mb-2">
-                    <Settings className="h-8 w-8 text-accent" />
-                    Business Settings
-                </h1>
-                <p className="text-muted-foreground text-sm">Manage your seller profile, business details, and contact information.</p>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-3xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-heading font-black tracking-tight">Store Settings</h1>
+                    <p className="text-muted-foreground mt-1">Manage your business profile and preferences.</p>
+                </div>
             </div>
 
-            <div className="space-y-8">
-                <div className="glass-panel p-8 rounded-3xl border border-border/50">
-                    <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border/50">
-                        <div className="p-3 bg-muted rounded-xl"><Building2 className="h-6 w-6 text-foreground" /></div>
-                        <div>
-                            <h3 className="text-lg font-bold">Public Profile</h3>
-                            <p className="text-sm text-muted-foreground">This information is displayed to buyers.</p>
-                        </div>
+            <div className="glass-panel p-6 md:p-8 rounded-2xl border-border/50">
+                <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border/50">
+                    <div className="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-accent" />
                     </div>
+                    <div>
+                        <h2 className="text-xl font-bold">Business Information</h2>
+                        <p className="text-sm text-muted-foreground">Update your officially registered business details</p>
+                    </div>
+                </div>
 
-                    <div className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold">Business Name</label>
+                            <label className="text-sm font-bold opacity-80 flex items-center gap-2">
+                                <Store className="h-4 w-4 text-accent" /> Business Name
+                            </label>
                             <input
                                 type="text"
-                                className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all"
-                                value={form.businessName}
-                                onChange={e => setForm({ ...form, businessName: e.target.value })}
+                                value={formData.businessName}
+                                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                                className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                required
                             />
                         </div>
-
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold">Store Description</label>
-                            <textarea
-                                rows={3}
-                                className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all resize-none"
-                                value={form.description}
-                                onChange={e => setForm({ ...form, description: e.target.value })}
-                                placeholder="Tell customers about your business..."
-                            />
+                            <label className="text-sm font-bold opacity-80">Business Type</label>
+                            <select
+                                value={formData.businessType}
+                                onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
+                                className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                            >
+                                <option value="sole_proprietor">Sole Proprietorship</option>
+                                <option value="llp">LLP</option>
+                                <option value="private_limited">Private Limited</option>
+                                <option value="public_limited">Public Limited</option>
+                            </select>
                         </div>
+                    </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold">Location</label>
-                                <input
-                                    type="text"
-                                    className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all"
-                                    value={form.location}
-                                    onChange={e => setForm({ ...form, location: e.target.value })}
-                                    placeholder="Mumbai, India"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold">Contact Email</label>
-                                <input
-                                    type="email"
-                                    className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all"
-                                    value={form.contactEmail}
-                                    onChange={e => setForm({ ...form, contactEmail: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold">Contact Phone</label>
+                            <label className="text-sm font-bold opacity-80">GST Number</label>
                             <input
-                                type="tel"
-                                className="w-full p-4 rounded-xl bg-background border border-border focus:ring-2 focus:ring-accent outline-none transition-all"
-                                value={form.contactPhone}
-                                onChange={e => setForm({ ...form, contactPhone: e.target.value })}
-                                placeholder="+91 98765 43210"
+                                type="text"
+                                value={formData.gstNumber}
+                                onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+                                className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all font-mono"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold opacity-80">PAN Number</label>
+                            <input
+                                type="text"
+                                value={formData.panNumber}
+                                onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                                className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all font-mono"
                             />
                         </div>
                     </div>
-                </div>
 
-                <div className="flex justify-end">
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="px-8 py-4 bg-foreground text-background font-bold rounded-xl shadow-lg hover:bg-primary transition-all hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50"
-                    >
-                        {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : saved ? <CheckCircle2 className="h-5 w-5" /> : <Save className="h-5 w-5" />}
-                        {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
-                    </button>
-                </div>
+                    <div className="pt-6 border-t border-border/50">
+                        <h2 className="text-lg font-bold mb-4">Contact & Operation Details</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold opacity-80">Founder / Contact Name</label>
+                                <input
+                                    type="text"
+                                    value={formData.founderName}
+                                    onChange={(e) => setFormData({ ...formData, founderName: e.target.value })}
+                                    className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold opacity-80">Primary Category</label>
+                                <select
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                >
+                                    <option value="">Select Category</option>
+                                    <option value="Luxury Watches">Luxury Watches</option>
+                                    <option value="Designer Handbags">Designer Handbags</option>
+                                    <option value="Fine Jewelry">Fine Jewelry</option>
+                                    <option value="Collectibles">Collectibles</option>
+                                    <option value="Fashion">Fashion</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Beauty">Beauty</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold opacity-80">Contact Email</label>
+                                <input
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold opacity-80">Contact Phone</label>
+                                <input
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-sm font-bold opacity-80">Registered Business Address</label>
+                                <textarea
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                    rows={2}
+                                    className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all resize-none custom-scrollbar"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-border/50 flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="bg-accent text-accent-foreground px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2 min-w-[140px] hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : isSuccess ? (
+                                <>
+                                    <CheckCircle2 className="h-5 w-5" /> Saved
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="h-5 w-5" /> Save Changes
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );

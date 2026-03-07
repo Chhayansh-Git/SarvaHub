@@ -4,9 +4,11 @@ import Link from "next/link";
 import { Search, Bell, User, Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 export function SellerNavbar() {
     const { theme, setTheme } = useTheme();
+    const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -16,9 +18,9 @@ export function SellerNavbar() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        // In the future, this will link to a seller-oriented search page
-        // for market research or searching their own inventory.
-        console.log("Searching seller hub for:", searchQuery);
+        if (searchQuery.trim()) {
+            router.push(`/seller/market?q=${encodeURIComponent(searchQuery.trim())}`);
+        }
     };
 
     return (
@@ -43,7 +45,7 @@ export function SellerNavbar() {
                         </div>
                         <input
                             type="text"
-                            placeholder="Search your inventory or research market trends..."
+                            placeholder="Search active listings or research market trends..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-background/50 border border-border/50 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 transition-all placeholder:text-muted-foreground/70"

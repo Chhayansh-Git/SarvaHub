@@ -7,14 +7,15 @@ import { motion, AnimatePresence } from "framer-motion";
 interface ShareProductProps {
     productUrl: string;
     productName: string;
+    qrCodeUrl?: string; // Built-in authenticity QR from backend
 }
 
-export function ShareProduct({ productUrl, productName }: ShareProductProps) {
+export function ShareProduct({ productUrl, productName, qrCodeUrl }: ShareProductProps) {
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    // We are using a public dummy QR image for now.
-    const qrImage = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(productUrl);
+    // Use backend authenticity QR. Fallback to generic URL QR if not available yet.
+    const qrImage = qrCodeUrl || "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(productUrl);
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(productUrl);

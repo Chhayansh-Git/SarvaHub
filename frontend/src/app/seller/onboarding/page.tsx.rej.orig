@@ -1,0 +1,9 @@
+@@ -194,5 +194,5 @@
+                             </div>
+                         )}
+-                    </div>
+-                    {!isSuccess && (
+-                         <div className="mt-8 pt-8 border-t border-border/50 flex items-center justify-between">
++
++        }
++    }

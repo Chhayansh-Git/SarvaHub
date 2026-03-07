@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User';
 import { PaymentMethod } from '../models/PaymentMethod';
 import { AppError } from '../utils/errors';
+import bcrypt from 'bcryptjs';
 
 // PATCH /api/v1/users/me — update profile
 export async function updateProfile(req: Request, res: Response, next: NextFunction) {
@@ -15,6 +16,31 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
         const user = await User.findByIdAndUpdate(req.user!.id, updates, { new: true, runValidators: true });
         if (!user) return next(new AppError(404, 'NOT_FOUND', 'User not found.'));
         res.json(user);
+    } catch (err) {
+        next(err);
+    }
+}
+
+// POST /api/v1/users/change-password — change password
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return next(new AppError(400, 'BAD_REQUEST', 'Current and new passions are required.'));
+        }
+
+        const user = await User.findById(req.user!.id).select('+password');
+        if (!user) return next(new AppError(404, 'NOT_FOUND', 'User not found.'));
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return next(new AppError(401, 'UNAUTHORIZED', 'Incorrect current password.'));
+        }
+
+        user.password = await bcrypt.hash(newPassword, 12);
+        await user.save();
+
+        res.json({ message: 'Password updated successfully' });
     } catch (err) {
         next(err);
     }

@@ -20,21 +20,11 @@ export default function SellerProductsPage() {
                 if (productList.length > 0) {
                     setProducts(productList);
                 } else {
-                    setProducts([
-                        { id: "PRD-001", name: "Classic Trench Coat", sku: "TC-M-KHK", category: "Fashion", price: 185000, stock: 45, status: "Active" },
-                        { id: "PRD-002", name: "Leica M11 Rangefinder", sku: "CAM-L11-BLK", category: "Electronics", price: 825000, stock: 3, status: "Low Stock" },
-                        { id: "PRD-003", name: "Oud Wood EDP", sku: "FRG-TF-OW100", category: "Beauty", price: 32000, stock: 0, status: "Out of Stock" },
-                        { id: "PRD-004", name: "Submariner Date", sku: "WTC-RLX-SBD", category: "Watches", price: 1245000, stock: 1, status: "Active" },
-                    ]);
+                    setProducts([]);
                 }
             } catch (error) {
-                // Fallback to mock data if backend not ready
-                setProducts([
-                    { id: "PRD-001", name: "Classic Trench Coat", sku: "TC-M-KHK", category: "Fashion", price: 185000, stock: 45, status: "Active" },
-                    { id: "PRD-002", name: "Leica M11 Rangefinder", sku: "CAM-L11-BLK", category: "Electronics", price: 825000, stock: 3, status: "Low Stock" },
-                    { id: "PRD-003", name: "Oud Wood EDP", sku: "FRG-TF-OW100", category: "Beauty", price: 32000, stock: 0, status: "Out of Stock" },
-                    { id: "PRD-004", name: "Submariner Date", sku: "WTC-RLX-SBD", category: "Watches", price: 1245000, stock: 1, status: "Active" },
-                ]);
+                console.error("Failed to load products", error);
+                setProducts([]);
             } finally {
                 setIsLoading(false);
             }
@@ -107,41 +97,56 @@ export default function SellerProductsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50 text-sm">
-                                {products.map((item) => (
-                                    <tr key={item.id} className="hover:bg-muted/20 transition-colors">
-                                        <td className="p-4">
-                                            <div className="font-semibold text-foreground">{item.name}</div>
-                                            <div className="text-xs text-muted-foreground sm:hidden mt-0.5">SKU: {item.sku}</div>
-                                        </td>
-                                        <td className="p-4 hidden sm:table-cell font-mono text-xs">{item.sku}</td>
-                                        <td className="p-4 hidden md:table-cell text-muted-foreground">{item.category}</td>
-                                        <td className="p-4 font-semibold">₹{item.price.toLocaleString('en-IN')}</td>
-                                        <td className="p-4">
-                                            <span className={`font-bold ${item.stock <= 5 && item.stock > 0 ? 'text-orange-500' : item.stock === 0 ? 'text-red-500' : 'text-foreground'}`}>
-                                                {item.stock}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${item.status === 'Active' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                                                item.status === 'Low Stock' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' :
-                                                    'bg-red-500/10 text-red-500 border border-red-500/20'
-                                                }`}>
-                                                {item.status}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 flex items-center justify-end gap-2">
-                                            <button className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors" title="View Listing">
-                                                <Eye className="h-4 w-4" />
-                                            </button>
-                                            <button className="p-2 hover:bg-muted text-muted-foreground hover:text-accent rounded-lg transition-colors" title="Edit Product">
-                                                <Edit2 className="h-4 w-4" />
-                                            </button>
-                                            <button className="p-2 hover:bg-red-500/10 text-muted-foreground hover:text-red-500 rounded-lg transition-colors" title="Delete Product">
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
+                                {products.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="text-center py-12 text-muted-foreground">
+                                            <Package className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                                            <p className="font-medium text-lg">No products found</p>
+                                            <p className="text-sm mt-1">Start building your store by adding a new product.</p>
                                         </td>
                                     </tr>
-                                ))}
+                                ) : products.map((item) => {
+                                    const id = item._id || item.id;
+                                    const price = item.price ? (item.price / 100) : item.sellingPrice || 0;
+                                    const stock = item.stock ?? item.inventory ?? 0;
+                                    const status = item.status || (stock > 0 ? 'Active' : 'Out of Stock');
+                                    const displayCategory = item.category || (item.categories && item.categories[0]) || 'General';
+
+                                    return (
+                                        <tr key={id} className="hover:bg-muted/20 transition-colors">
+                                            <td className="p-4">
+                                                <div className="font-semibold text-foreground">{item.name}</div>
+                                            </td>
+                                            <td className="p-4 hidden sm:table-cell font-mono text-xs">{item.sku || 'N/A'}</td>
+                                            <td className="p-4 hidden md:table-cell text-muted-foreground capitalize">{displayCategory}</td>
+                                            <td className="p-4 font-semibold">₹{price.toLocaleString('en-IN')}</td>
+                                            <td className="p-4">
+                                                <span className={`font-bold ${stock <= 5 && stock > 0 ? 'text-orange-500' : stock === 0 ? 'text-red-500' : 'text-foreground'}`}>
+                                                    {stock}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${status.toLowerCase() === 'active' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                                                    status.toLowerCase().includes('low') ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' :
+                                                        'bg-red-500/10 text-red-500 border border-red-500/20'
+                                                    }`}>
+                                                    {status}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 flex items-center justify-end gap-2">
+                                                <button className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors" title="View Listing">
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
+                                                <button className="p-2 hover:bg-muted text-muted-foreground hover:text-accent rounded-lg transition-colors" title="Edit Product">
+                                                    <Edit2 className="h-4 w-4" />
+                                                </button>
+                                                <button className="p-2 hover:bg-red-500/10 text-muted-foreground hover:text-red-500 rounded-lg transition-colors" title="Delete Product">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>

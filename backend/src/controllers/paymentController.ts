@@ -75,16 +75,31 @@ export async function createCheckoutIntent(req: Request, res: Response, next: Ne
         const shipping = subtotal >= 49900 ? 0 : 4900; // Free shipping over ₹499
         const total = subtotal + tax + shipping;        // Total in paisa
 
-        // 5. Fetch shipping address
+        // 5. Resolve shipping address - prefer inline address from checkout form
+        const { shippingAddress: inlineAddress } = req.body;
         const user = await User.findById(userId);
         let shippingAddress: any = null;
-        if (shippingAddressId && user) {
+
+        if (inlineAddress && inlineAddress.address && inlineAddress.pincode && inlineAddress.city) {
+            // Use the address submitted directly in the checkout form
+            shippingAddress = {
+                id: generateId('addr'),
+                firstName: inlineAddress.firstName || '',
+                lastName: inlineAddress.lastName || '',
+                email: inlineAddress.email || '',
+                address: inlineAddress.address,
+                pincode: inlineAddress.pincode,
+                city: inlineAddress.city,
+                state: inlineAddress.state || '',
+                country: inlineAddress.country || 'India',
+            };
+        } else if (shippingAddressId && user) {
             shippingAddress = user.addresses.find(
                 (addr: any) => addr.id === shippingAddressId
             );
         }
         if (!shippingAddress && user && user.addresses.length > 0) {
-            // Fall back to default or first address
+            // Fall back to default or first saved address
             shippingAddress = user.addresses.find((a: any) => a.isDefault) || user.addresses[0];
         }
         if (!shippingAddress) {
@@ -199,6 +214,13 @@ async function processStripeEvent(event: any) {
                 return;
             }
 
+            // Idempotency check: Ensure order for this payment intent doesn't exist already
+            const existingOrder = await Order.findOne({ 'paymentMethod.paymentIntentId': paymentIntent.id });
+            if (existingOrder) {
+                console.log(`[StripeWebhook] Order for PaymentIntent ${paymentIntent.id} already exists. Skipping.`);
+                return;
+            }
+
             // Fetch user's cart to create the order
             const cart = await Cart.findOne({ user: userId });
             if (!cart || cart.items.length === 0) {
@@ -257,9 +279,7 @@ async function processStripeEvent(event: any) {
             // Create the Order
             const order = new Order({
                 user: userId,
-                seller: orderItems[0]?.productId
-                    ? productMap.get(orderItems[0].productId)?.seller
-                    : null,
+                seller: Array.from(new Set(orderItems.map(item => productMap.get(item.productId)?.seller).filter(Boolean))),
                 status: 'confirmed',
                 statusLabel: 'Confirmed',
                 items: orderItems,
@@ -272,6 +292,7 @@ async function processStripeEvent(event: any) {
                     type: paymentIntent.payment_method_types?.[0] || 'card',
                     last4: '',
                     brand: '',
+                    paymentIntentId: paymentIntent.id
                 },
                 tracking: {
                     carrier: null,

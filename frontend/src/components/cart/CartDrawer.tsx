@@ -105,7 +105,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                                         <p className="text-xs text-muted-foreground mt-1">{item.attributes}</p>
                                                     )}
                                                 </div>
-                                                <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
+                                                <button onClick={() => removeItem(item.productId)} className="text-muted-foreground hover:text-red-500 transition-colors">
                                                     <Trash2 className="h-4 w-4" />
                                                 </button>
                                             </div>
@@ -113,11 +113,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                             <div className="flex items-center justify-between mt-4">
                                                 {/* Quantity Stepper */}
                                                 <div className="flex items-center gap-3 bg-muted/50 rounded-full px-2 py-1 border border-border">
-                                                    <button onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))} className="p-1 hover:text-accent disabled:opacity-50" disabled={item.quantity <= 1}>
+                                                    <button onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))} className="p-1 hover:text-accent disabled:opacity-50" disabled={item.quantity <= 1}>
                                                         <Minus className="h-3.5 w-3.5" />
                                                     </button>
                                                     <span className="text-sm font-semibold w-4 text-center">{item.quantity}</span>
-                                                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:text-accent">
+                                                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="p-1 hover:text-accent">
                                                         <Plus className="h-3.5 w-3.5" />
                                                     </button>
                                                 </div>

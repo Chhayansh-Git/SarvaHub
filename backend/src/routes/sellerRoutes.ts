@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
 import {
     submitOnboarding,
+    createOnboardingPayment,
+    confirmOnboardingPayment,
     getSellerAnalytics,
     updateSellerSettings,
     getSellerCompliance,
@@ -12,6 +14,8 @@ import {
     getSellerReturns,
     updateSellerReturn,
     getSellerFeedback,
+    getMarketInsights,
+    getMarketInsightProduct,
 } from '../controllers/orderController';
 
 const router = Router();
@@ -20,11 +24,17 @@ router.use(authenticate);
 
 // Onboarding (any authenticated user can apply)
 router.post('/onboarding', submitOnboarding);
+router.post('/onboarding/pay', createOnboardingPayment);
+router.post('/onboarding/confirm', confirmOnboardingPayment);
 
 // Seller-only routes
 router.get('/analytics', authorize('seller'), getSellerAnalytics);
 router.patch('/settings', authorize('seller'), updateSellerSettings);
 router.get('/compliance', authorize('seller'), getSellerCompliance);
+
+// Market Insights & B2B
+router.get('/market', authorize('seller'), getMarketInsights);
+router.get('/market/:id', authorize('seller'), getMarketInsightProduct);
 
 // Seller order management (frontend calls /seller/orders, /seller/stats, etc.)
 router.get('/orders', authorize('seller'), getSellerOrders);

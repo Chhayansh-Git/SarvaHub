@@ -4,6 +4,16 @@ import { config } from '../config';
 const resend = new Resend(config.resend.apiKey);
 const FROM_EMAIL = config.resend.fromEmail;
 
+// ─── Helpers ────────────────────────────────────────────────────────
+function escapeHtml(unsafe: string): string {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 // ─── Email Templates ────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name: string) {
@@ -14,7 +24,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
             subject: 'Welcome to SarvaHub! 🎉',
             html: `
                 <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-                    <h1 style="color: #B8860B; margin-bottom: 16px;">Welcome to SarvaHub, ${name}!</h1>
+                    <h1 style="color: #B8860B; margin-bottom: 16px;">Welcome to SarvaHub, ${escapeHtml(name)}!</h1>
                     <p style="color: #555; font-size: 16px; line-height: 1.6;">
                         Thank you for joining the premium marketplace. You now have access to curated luxury products
                         with verified authenticity.
@@ -85,7 +95,7 @@ export async function sendSellerOnboardingConfirmation(to: string, businessName:
                 <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
                     <h1 style="color: #B8860B;">Application Submitted! 🎉</h1>
                     <p style="font-size: 16px; color: #555;">
-                        Your seller application for <strong>${businessName}</strong> has been received.
+                        Your seller application for <strong>${escapeHtml(businessName)}</strong> has been received.
                         Our team will review your documents within 48 hours.
                     </p>
                     <a href="${config.frontendUrl}/seller/dashboard" style="display: inline-block; background: #B8860B; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 16px;">

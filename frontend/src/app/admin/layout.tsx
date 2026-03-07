@@ -7,22 +7,20 @@ import { LayoutDashboard, Users, ShoppingBag, MessageSquare, Tag, LogOut, Loader
 import Link from 'next/link';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user, isAuthenticated, isLoading } = useUserStore();
+    const { user, isAuthenticated } = useUserStore();
     const router = useRouter();
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
-        if (!isLoading) {
-            if (!isAuthenticated) {
-                router.push('/login');
-            } else if (user?.role !== 'admin') {
-                router.push('/');
-            }
+        if (!isAuthenticated) {
+            router.push('/login');
+        } else if (user?.role !== 'admin') {
+            router.push('/');
         }
-    }, [isAuthenticated, user, isLoading, router]);
+    }, [isAuthenticated, user, router]);
 
-    if (isLoading || !isAuthenticated || user?.role !== 'admin') {
+    if (!isAuthenticated || user?.role !== 'admin') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <Loader2 className="h-8 w-8 animate-spin text-accent" />

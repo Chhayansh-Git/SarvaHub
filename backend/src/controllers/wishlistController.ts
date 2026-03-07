@@ -15,7 +15,7 @@ export async function getWishlist(req: Request, res: Response, next: NextFunctio
 // POST /api/v1/wishlist
 export async function addToWishlist(req: Request, res: Response, next: NextFunction) {
     try {
-        const { productId, name, brand, price, image } = req.body;
+        const { productId, name, brand, price, image, slug } = req.body;
         const existing = await WishlistItem.findOne({ user: req.user!.id, productId });
         if (existing) return res.json(existing);
 
@@ -26,6 +26,7 @@ export async function addToWishlist(req: Request, res: Response, next: NextFunct
             brand: brand || '',
             price: price || 0,
             image: image || '',
+            slug: slug || '',
         });
         res.status(201).json(item);
     } catch (err) {

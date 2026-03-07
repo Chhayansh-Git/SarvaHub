@@ -39,6 +39,7 @@ router.post(
                 publicId: result.publicId,
             });
         } catch (err) {
+            console.error('[Upload API Error]:', err);
             next(err);
         }
     }

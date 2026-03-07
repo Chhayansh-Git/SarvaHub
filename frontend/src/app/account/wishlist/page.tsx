@@ -6,12 +6,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart, ArrowLeft, ShoppingBag, Trash2, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useCartStore } from "@/store/cartStore";
 
-const MOCK_WISHLIST = [
-    { id: "1", name: "Classic Trench Coat", brand: "Burberry", price: 185000, inStock: true, image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=300" },
-    { id: "2", name: "Leica M11 Rangefinder", brand: "Leica", price: 825000, inStock: false, image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=300" },
-    { id: "3", name: "Oud Wood Eau de Parfum", brand: "Tom Ford", price: 32000, inStock: true, image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=300" },
-];
+
 
 export default function WishlistPage() {
     const { isAuthenticated } = useUserStore();
@@ -27,8 +24,8 @@ export default function WishlistPage() {
                 const data = await api.get<any>('/wishlist');
                 setWishlist(data.items || data.wishlist || []);
             } catch (error) {
-                // Backend not ready — keep fallback data
-                setWishlist(MOCK_WISHLIST);
+                // Backend not ready — fallback empty
+                setWishlist([]);
             } finally {
                 setIsLoading(false);
             }
@@ -38,8 +35,9 @@ export default function WishlistPage() {
             fetchWishlist();
         } else {
             setIsLoading(false);
+            router.push('/');
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, router]);
 
     const removeFromWishlist = async (id: string, e: React.MouseEvent) => {
         e.preventDefault();
@@ -92,6 +90,7 @@ export default function WishlistPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {wishlist.map((item) => {
                             const productId = item.product?._id || item._id || item.id;
+                            const productSlug = item.product?.slug || item.slug;
                             const image = item.product?.images?.[0] || item.image || item.product?.image;
                             const name = item.product?.name || item.name;
                             const brand = item.product?.brand || item.brand;
@@ -99,7 +98,7 @@ export default function WishlistPage() {
                             const inStock = item.product ? item.product.stock > 0 : item.inStock !== false;
 
                             return (
-                                <div key={item.id || productId} className="group glass-panel border border-border/50 rounded-2xl overflow-hidden hover:border-accent/50 transition-all flex flex-col">
+                                <Link href={`/products/${item.slug || productSlug || productId}`} key={item.id || productId} className="group glass-panel border border-border/50 rounded-2xl overflow-hidden hover:border-accent/50 transition-all flex flex-col">
                                     <div className="relative aspect-[4/5] overflow-hidden bg-muted">
                                         <img src={image || 'https://images.unsplash.com/photo-1548171915-e79a380a2a4b'} alt={name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
 
@@ -127,6 +126,14 @@ export default function WishlistPage() {
 
                                         <button
                                             disabled={!inStock}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                const { addItem } = useCartStore.getState();
+                                                addItem(item.productId || productId, 1);
+                                                // Remove from wishlist after moving to bag
+                                                removeFromWishlist(item.id || productId, e);
+                                            }}
                                             className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${inStock
                                                 ? "bg-primary text-primary-foreground hover:bg-foreground hover:text-background"
                                                 : "bg-muted text-muted-foreground cursor-not-allowed"
@@ -136,7 +143,7 @@ export default function WishlistPage() {
                                             {inStock ? "Move to Bag" : "Notify Me"}
                                         </button>
                                     </div>
-                                </div>
+                                </Link>
                             );
                         })}
                     </div>

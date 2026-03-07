@@ -6,67 +6,22 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-const FALLBACK_CATEGORIES = [
-  { name: "Luxury Watches", image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=2980&auto=format&fit=crop", count: "124 items" },
-  { name: "Premium Audio", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=3270&auto=format&fit=crop", count: "89 items" },
-  { name: "Designer Apparel", image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=3270&auto=format&fit=crop", count: "450 items" },
-  { name: "Fine Leather", image: "https://images.unsplash.com/photo-1559563458-527698bf5295?q=80&w=3270&auto=format&fit=crop", count: "210 items" },
-];
-
-const FALLBACK_PRODUCTS = [
-  {
-    _id: "1",
-    name: "Classic Chronograph Automatic 42mm",
-    brand: "Orion Watch Co.",
-    price: 345000,
-    rating: 4.9,
-    reviews: 124,
-    images: ["https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=800"],
-  },
-  {
-    _id: "2",
-    name: "Onyx & Gold Statement Ring",
-    brand: "Aetherius",
-    price: 189000,
-    rating: 4.8,
-    reviews: 89,
-    images: ["https://images.unsplash.com/photo-1515562141207-7a48cf7ce338?auto=format&fit=crop&q=80&w=800"],
-  },
-  {
-    _id: "3",
-    name: "Signature Leather Travel Weekender",
-    brand: "Vanguard",
-    price: 98000,
-    rating: 5.0,
-    reviews: 42,
-    images: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=800"],
-  },
-  {
-    _id: "4",
-    name: "Vintage 1960s Submariner Limited",
-    brand: "Heritage Horology",
-    price: 1250000,
-    rating: 4.9,
-    reviews: 15,
-    images: ["https://images.unsplash.com/photo-1605901309584-818e25960b8f?auto=format&fit=crop&q=80&w=800"],
-  }
-];
-
 export default function Home() {
-  const [featuredProducts, setFeaturedProducts] = useState<any[]>(FALLBACK_PRODUCTS);
-  const [trendingCategories, setTrendingCategories] = useState<any[]>(FALLBACK_CATEGORIES);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [trendingCategories, setTrendingCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchHomeData() {
       // Fetch products independently — fallback on failure
       try {
-        const productsRes = await api.get<any>('/products?limit=4');
-        if (productsRes?.products?.length > 0) {
-          setFeaturedProducts(productsRes.products.slice(0, 4));
+        const productsRes = await api.get<any>('/products?limit=4&sort=rating');
+        const items = productsRes?.data || productsRes?.products || [];
+        if (items.length > 0) {
+          setFeaturedProducts(items.slice(0, 4));
         }
       } catch {
-        // Backend not ready — keep fallback products
+        console.error("Failed to fetch products");
       }
 
       // Fetch categories independently — fallback on failure
@@ -76,12 +31,12 @@ export default function Home() {
         if (apiCategories.length > 0) {
           setTrendingCategories(apiCategories.slice(0, 4).map((c: any) => ({
             name: c.title || c.name || "Category",
-            image: c.image || FALLBACK_CATEGORIES[0].image,
-            count: c.description || `${Math.floor(Math.random() * 200) + 50} items`
+            image: c.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
+            count: c.description || '24 items'
           })));
         }
       } catch {
-        // Backend not ready — keep fallback categories
+        console.error("Failed to fetch categories");
       }
 
       setIsLoading(false);
@@ -146,7 +101,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {trendingCategories.map((category) => (
-            <Link href={`/category/${category.name.toLowerCase().replace(' ', '-')}`} key={category.name} className="group relative h-80 rounded-2xl overflow-hidden glass-panel border-border/50 block">
+            <Link href={`/search?category=${encodeURIComponent(category.name)}`} key={category.name} className="group relative h-80 rounded-2xl overflow-hidden glass-panel border-border/50 block">
               <Image
                 src={category.image}
                 alt={category.name}
@@ -185,10 +140,10 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
-              <Link href={`/products/${product._id || product.id}`} key={product._id || product.id} className="group glass-panel rounded-2xl overflow-hidden flex flex-col hover:border-accent/50 transition-colors border-border/50 shadow-sm hover:shadow-xl hover:shadow-black/5">
+              <Link href={`/products/${product.slug}`} key={product.slug || product.id} className="group glass-panel rounded-2xl overflow-hidden flex flex-col hover:border-accent/50 transition-colors border-border/50 shadow-sm hover:shadow-xl hover:shadow-black/5">
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <Image
-                    src={product.images?.[0] || product.image || FALLBACK_PRODUCTS[0].images[0]}
+                    src={product.images?.[0]?.url || product.images?.[0] || product.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'}
                     alt={product.name}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -205,7 +160,7 @@ export default function Home() {
                   <div className="flex items-center gap-1 mb-4">
                     <Star className="h-4 w-4 fill-accent text-accent" />
                     <span className="text-sm font-bold">{product.rating || 4.9}</span>
-                    <span className="text-sm text-muted-foreground">({product.reviews || Math.floor(Math.random() * 200)})</span>
+                    <span className="text-sm text-muted-foreground">({product.reviewCount || product.reviews || 0})</span>
                   </div>
 
                   <div className="mt-auto flex items-end justify-between">

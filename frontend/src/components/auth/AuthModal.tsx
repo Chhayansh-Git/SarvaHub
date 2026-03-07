@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, ShieldCheck } from 'lucide-react';
 import { useUserStore } from '@/store/userStore';
 import { api } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export function AuthModal() {
-    const { isAuthModalOpen, authModalType, closeAuthModal, openAuthModal, login } = useUserStore();
+    const { isAuthModalOpen, authModalType, authModalMessage, closeAuthModal, openAuthModal, login } = useUserStore();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     // Form fields
@@ -32,10 +34,10 @@ export function AuthModal() {
 
             const data = await api.post<{
                 user: { id: string; name: string; email: string; role: 'consumer' | 'seller' | 'admin'; avatar?: string };
-                accessToken: string;
+                token: string;
             }>(endpoint, body);
 
-            login(data.user, data.accessToken);
+            login(data.user, data.token);
 
             // Sync cart after login
             try {
@@ -48,6 +50,13 @@ export function AuthModal() {
             setEmail('');
             setPassword('');
             closeAuthModal();
+
+            // Role-based redirect after login
+            if (data.user.role === 'seller') {
+                router.push('/seller/dashboard');
+            } else if (data.user.role === 'admin') {
+                router.push('/admin');
+            }
         } catch (err: any) {
             setError(err?.message || 'Something went wrong. Please try again.');
         } finally {
@@ -100,8 +109,15 @@ export function AuthModal() {
                             </p>
                         </div>
 
+                        {authModalMessage && (
+                            <div className="mb-6 p-4 rounded-xl bg-accent/10 border border-accent/20 flex items-start gap-3">
+                                <ShieldCheck className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                                <p className="text-sm font-medium text-foreground">{authModalMessage}</p>
+                            </div>
+                        )}
+
                         {error && (
-                            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium text-center">
+                            <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium text-center">
                                 {error}
                             </div>
                         )}

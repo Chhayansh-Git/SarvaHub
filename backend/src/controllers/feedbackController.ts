@@ -15,6 +15,13 @@ export async function getFeedback(req: Request, res: Response, next: NextFunctio
 export async function submitFeedback(req: Request, res: Response, next: NextFunction) {
     try {
         const { title, description } = req.body;
+
+        if (!title || typeof title !== 'string' || title.trim().length === 0) {
+            return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Title is required.' } });
+        }
+        if (!description || typeof description !== 'string' || description.trim().length === 0) {
+            return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Description is required.' } });
+        }
         const fb = await Feedback.create({
             title,
             description,

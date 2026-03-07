@@ -6,10 +6,7 @@ import { useEffect, useState } from "react";
 import { CreditCard, ArrowLeft, Plus, MoreVertical, Trash2, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 
-const MOCK_METHODS = [
-    { id: "pm_1", brand: "VISA", last4: "4242", name: "John Doe", expMonth: 12, expYear: 28, isDefault: true, color: "from-zinc-900 via-zinc-800 to-black text-white", textAccent: "text-white" },
-    { id: "pm_2", brand: "AMEX", last4: "1005", name: "John Doe", expMonth: 5, expYear: 26, isDefault: false, color: "bg-muted/50 text-foreground", textAccent: "text-blue-600" }
-];
+
 
 export default function PaymentsPage() {
     const { isAuthenticated } = useUserStore();
@@ -23,17 +20,22 @@ export default function PaymentsPage() {
             try {
                 const data = await api.get<any>('/payments/methods');
                 const list = Array.isArray(data) ? data : (data.methods || []);
-                setMethods(list.length > 0 ? list : MOCK_METHODS);
+                setMethods(list.length > 0 ? list : []);
             } catch (error) {
-                // Backend not ready — keep fallback data
-                setMethods(MOCK_METHODS);
+                // Backend not ready — fallback empty
+                setMethods([]);
             } finally {
                 setIsLoading(false);
             }
         }
 
-        fetchPaymentMethods();
-    }, []);
+        if (isAuthenticated) {
+            fetchPaymentMethods();
+        } else {
+            setIsLoading(false);
+            router.push('/');
+        }
+    }, [isAuthenticated, router]);
 
     return (
         <div className="min-h-screen pt-32 pb-24 bg-background">

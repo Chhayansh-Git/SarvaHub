@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Search, Filter, Clock, MessageSquare, AlertCircle, CheckCircle, ChevronRight, Hash, Loader2 } from "lucide-react";
+import { Plus, Search, Filter, Clock, MessageSquare, AlertCircle, CheckCircle, ChevronRight, Hash, Loader2, LifeBuoy } from "lucide-react";
+import { useUserStore } from "@/store/userStore";
+import Link from "next/link";
 
 export default function SupportTicketsPage() {
+    const { isAuthenticated } = useUserStore();
     const [filter, setFilter] = useState("Open");
     const [tickets, setTickets] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        if (!isAuthenticated) {
+            setIsLoading(false);
+            return;
+        }
+
         async function fetchTickets() {
             try {
                 const { api } = await import('@/lib/api');
@@ -21,20 +29,37 @@ export default function SupportTicketsPage() {
                     throw new Error("Empty tickets, use fallback");
                 }
             } catch (error) {
-                // Fallback to mock data
-                setTickets([
-                    { id: "TCK-A8F29C", subject: "Refund not received yet", category: "Refunds", status: "Open", priority: "High", assignedTo: "Support Team", lastUpdated: "10 mins ago" },
-                    { id: "TCK-B3D55X", subject: "Update shipping address", category: "Orders", status: "Open", priority: "Medium", assignedTo: "Logistics", lastUpdated: "2 hours ago" },
-                    { id: "TCK-M9N11Z", subject: "Product damaged on arrival", category: "Returns", status: "Awaiting Reply", priority: "High", assignedTo: "Quality Control", lastUpdated: "1 day ago" },
-                    { id: "TCK-X7Y44P", subject: "Discount code not working", category: "Payments", status: "Resolved", priority: "Low", assignedTo: "Billing", lastUpdated: "3 days ago" },
-                ]);
+                // Fallback to empty tickets instead of faking data
+                setTickets([]);
             } finally {
                 setIsLoading(false);
             }
         }
 
         fetchTickets();
-    }, []);
+    }, [isAuthenticated]);
+
+    if (!isAuthenticated && !isLoading) {
+        return (
+            <div className="min-h-screen pt-32 pb-24 px-4 sm:px-6 flex flex-col items-center">
+                <div className="glass-panel p-10 rounded-3xl text-center max-w-md w-full border border-border mt-10">
+                    <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <LifeBuoy className="h-8 w-8 text-accent" />
+                    </div>
+                    <h1 className="text-2xl font-bold mb-4 font-heading">Authentication Required</h1>
+                    <p className="text-muted-foreground mb-8 text-sm">
+                        Please log in or create an account to view and manage your support tickets.
+                    </p>
+                    <Link
+                        href="/account"
+                        className="bg-foreground text-background font-bold py-3 px-8 rounded-xl hover:bg-primary transition-colors inline-block w-full"
+                    >
+                        Log In / Sign Up
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     const filteredTickets = filter === "All" ? tickets : tickets.filter(t =>
         filter === "Awaiting Reply" ? t.status === "Awaiting Reply" :
@@ -60,12 +85,11 @@ export default function SupportTicketsPage() {
                     </button>
                 </div>
 
-                {/* Dashboard Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="glass-panel p-6 rounded-2xl border border-border/50 flex items-center justify-between">
                         <div>
                             <p className="text-sm text-muted-foreground font-medium mb-1">Open Tickets</p>
-                            <p className="text-3xl font-bold text-foreground">2</p>
+                            <p className="text-3xl font-bold text-foreground">{tickets.filter(t => t.status === "Open").length}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
                             <AlertCircle className="h-6 w-6" />
@@ -74,7 +98,7 @@ export default function SupportTicketsPage() {
                     <div className="glass-panel p-6 rounded-2xl border border-border/50 flex items-center justify-between">
                         <div>
                             <p className="text-sm text-muted-foreground font-medium mb-1">Awaiting Your Reply</p>
-                            <p className="text-3xl font-bold text-foreground">1</p>
+                            <p className="text-3xl font-bold text-foreground">{tickets.filter(t => t.status === "Awaiting Reply").length}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
                             <Clock className="h-6 w-6" />
@@ -83,7 +107,7 @@ export default function SupportTicketsPage() {
                     <div className="glass-panel p-6 rounded-2xl border border-border/50 flex items-center justify-between">
                         <div>
                             <p className="text-sm text-muted-foreground font-medium mb-1">Resolved (Past 30 Days)</p>
-                            <p className="text-3xl font-bold text-foreground">4</p>
+                            <p className="text-3xl font-bold text-foreground">{tickets.filter(t => t.status === "Resolved").length}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                             <CheckCircle className="h-6 w-6" />

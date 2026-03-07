@@ -10,24 +10,21 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useUserStore } from "@/store/userStore";
 
-const MOCK_RECENT_ORDERS = [
-    { id: "ORD-9283", product: "Royal Oak Automatic", customer: "Rahul V.", amount: 840000, status: "pending", date: "Today, 10:42 AM", image: "https://images.unsplash.com/photo-1548171915-e79a380a2a4b?w=150&q=80" },
-    { id: "ORD-9282", product: "Silk Kanjeevaram Saree", customer: "Priya S.", amount: 45000, status: "processing", date: "Yesterday, 4:15 PM", image: "https://images.unsplash.com/photo-1583391733958-690226c6db39?w=150&q=80" },
-    { id: "ORD-9281", product: "MacBook Pro M3 Max", customer: "Amit K.", amount: 319900, status: "shipped", date: "Yesterday, 1:30 PM", image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=150&q=80" },
-    { id: "ORD-9280", product: "Sony Alpha A7 IV", customer: "Neha M.", amount: 215000, status: "delivered", date: "Oct 24, 09:20 AM", image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=150&q=80" },
-];
+import { ReportDownloadButton } from "@/components/seller/ReportDownloadButton";
 
-const MOCK_STATS = {
-    revenue: "₹12.4M", revenueTrend: 14.2,
-    orders: "1,284", ordersTrend: 8.1,
-    listings: "342", listingsTrend: -2.4,
-    conversion: "3.8%", conversionTrend: 1.2,
+const EMPTY_STATS = {
+    revenue: "₹0", revenueTrend: 0,
+    orders: "0", ordersTrend: 0,
+    listings: "0", listingsTrend: 0,
+    conversion: "0%", conversionTrend: 0,
+    pendingOrders: 0, returns: 0,
+    trustScore: 50, isVerified: false
 };
 
 export default function SellerDashboardPage() {
     const { user } = useUserStore();
     const [orders, setOrders] = useState<any[]>([]);
-    const [stats, setStats] = useState(MOCK_STATS);
+    const [stats, setStats] = useState(EMPTY_STATS);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -40,18 +37,19 @@ export default function SellerDashboardPage() {
                     api.get<any>('/seller/stats').catch(() => null)
                 ]);
 
-                if (ordersData && ordersData.length > 0) {
+                if (ordersData && Array.isArray(ordersData)) {
                     setOrders(ordersData);
                 } else {
-                    setOrders(MOCK_RECENT_ORDERS);
+                    setOrders([]);
                 }
 
                 if (statsData) {
                     setStats(statsData);
                 }
             } catch (error) {
-                // Backend not ready — keep fallback data
-                setOrders(MOCK_RECENT_ORDERS);
+                // Backend not ready — fallback empty
+                setOrders([]);
+                setStats(EMPTY_STATS);
             } finally {
                 setIsLoading(false);
             }
@@ -79,9 +77,7 @@ export default function SellerDashboardPage() {
                     <p className="text-muted-foreground mt-1">Here is what is happening with your store today.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="px-5 py-2.5 glass-panel rounded-xl font-medium hover:bg-muted transition-colors text-sm">
-                        Download Report
-                    </button>
+                    <ReportDownloadButton />
                     <Link href="/seller/listing/new" className="px-5 py-2.5 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-colors text-sm shadow-md">
                         + New Listing
                     </Link>
@@ -91,17 +87,21 @@ export default function SellerDashboardPage() {
             {/* Top Row: Trust Badge & Key Actions */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2">
-                    <SellerTrustBadge tier="enterprise" score={98} verified={true} />
+                    <SellerTrustBadge
+                        tier={stats.trustScore >= 80 ? 'enterprise' : stats.trustScore >= 60 ? 'professional' : 'starter'}
+                        score={stats.trustScore || 50}
+                        verified={stats.isVerified || false}
+                    />
                 </div>
                 <div className="glass-panel rounded-2xl p-6 border-border/50 flex flex-col justify-center">
                     <h3 className="font-bold mb-2">Pending Actions</h3>
                     <div className="space-y-3">
                         <div className="flex items-center justify-between text-sm">
-                            <span className="text-rose-500 font-medium flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> 12 Orders to fulfill</span>
+                            <span className="text-rose-500 font-medium flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> {stats.pendingOrders || 0} Orders to fulfill</span>
                             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                            <span className="text-amber-500 font-medium flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500" /> 3 Returns requested</span>
+                            <span className="text-amber-500 font-medium flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-500" /> {stats.returns || 0} Returns requested</span>
                             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                         </div>
                     </div>

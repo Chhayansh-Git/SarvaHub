@@ -10,6 +10,7 @@ export interface IWishlistItem {
     brand: string;
     price: number;     // paisa
     image: string;
+    slug: string;
     inStock: boolean;
     addedAt: Date;
 }
@@ -24,6 +25,7 @@ const WishlistItemSchema = new Schema(
         brand: { type: String, default: '' },
         price: { type: Number, default: 0 },
         image: { type: String, default: '' },
+        slug: { type: String, default: '' },
         inStock: { type: Boolean, default: true },
         addedAt: { type: Date, default: Date.now },
     },
