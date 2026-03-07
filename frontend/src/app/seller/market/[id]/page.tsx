@@ -6,9 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Loader2, ArrowLeft, TrendingUp, Star, PackageSearch, ShieldCheck, ShoppingCart, Info, CheckCircle } from "lucide-react";
+import { ContactSellerDialog } from "@/components/shared/ContactSellerDialog";
 
 type ProductDetails = {
     _id: string;
+    id?: string;
     name: string;
     description: string;
     price: number;
@@ -100,9 +102,17 @@ export default function MarketProductPage() {
                             <h1 className="text-3xl font-heading font-black mb-2">{product.name}</h1>
                             <div className="text-muted-foreground mb-6 flex items-center gap-2">
                                 Sold by <Link href={`/seller/store/${(product.seller as any)?._id || (product.seller as any)?.id}`} className="font-bold text-foreground hover:text-accent transition-colors hover:underline">{product.seller?.companyName || product.seller?.name}</Link>
-                                <Link href={`/seller/store/${(product.seller as any)?._id || (product.seller as any)?.id}`} className="text-xs font-bold bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent hover:text-white transition-all ml-2">
-                                    Visit B2B Store
-                                </Link>
+                                <div className="flex items-center gap-2 ml-3">
+                                    <Link href={`/seller/store/${(product.seller as any)?._id || (product.seller as any)?.id}`} className="text-xs font-bold bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent hover:text-white transition-all">
+                                        Visit B2B Store
+                                    </Link>
+                                    <ContactSellerDialog
+                                        sellerId={(product.seller as any)?._id || (product.seller as any)?.id}
+                                        sellerName={product.seller?.companyName || product.seller?.name}
+                                        productId={product._id || product.id || ''}
+                                        productName={product.name}
+                                    />
+                                </div>
                             </div>
 
                             <div className="prose prose-sm dark:prose-invert max-w-none mb-6 line-clamp-3">
