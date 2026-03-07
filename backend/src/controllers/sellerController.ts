@@ -13,7 +13,7 @@ export async function submitOnboarding(req: Request, res: Response, next: NextFu
         const user = await User.findById(req.user!.id);
         if (!user) return next(new AppError(404, 'NOT_FOUND', 'User not found.'));
 
-        const { businessName, businessType, gstNumber, panNumber, registeredAddress, bankDetails, kycDetails, contactPerson, categories } = req.body;
+        const { businessName, businessType, gstNumber, panNumber, registeredAddress, bankDetails, kycDetails, contactPerson, categories, documents } = req.body;
 
         // user.role = 'seller'; // DO NOT set role yet, wait for payment
         user.sellerProfile = {
@@ -29,6 +29,7 @@ export async function submitOnboarding(req: Request, res: Response, next: NextFu
                 submittedAt: new Date(),
             },
             contactPerson,
+            documents,
             categories: categories || [],
             status: 'pending_payment',
             joinedYear: new Date().getFullYear(),
@@ -204,6 +205,13 @@ export async function updateSellerSettings(req: Request, res: Response, next: Ne
                 ...req.body.kycDetails,
                 verificationStatus: 'pending', // Changing KYC docs always reverts status to pending
                 submittedAt: new Date(),
+            };
+        }
+
+        if (req.body.documents) {
+            user.sellerProfile.documents = {
+                ...(user.sellerProfile.documents as any)?._doc || user.sellerProfile.documents,
+                ...req.body.documents,
             };
         }
 

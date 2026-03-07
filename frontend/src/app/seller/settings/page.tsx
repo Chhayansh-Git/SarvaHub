@@ -31,6 +31,12 @@ export default function SellerSettingsPage() {
         documentUrl: "",
     });
 
+    // Business Documents
+    const [documents, setDocuments] = useState({
+        businessRegistration: "",
+        identityProof: ""
+    });
+
     // Bank Data
     const [bankData, setBankData] = useState({
         accountName: "",
@@ -76,6 +82,13 @@ export default function SellerSettingsPage() {
                     bankName: profile.bankDetails.bankName || "",
                 });
             }
+
+            if (profile.documents) {
+                setDocuments({
+                    businessRegistration: profile.documents.businessRegistration || "",
+                    identityProof: profile.documents.identityProof || ""
+                });
+            }
         }
     }, [user]);
 
@@ -89,6 +102,7 @@ export default function SellerSettingsPage() {
                 ...formData,
                 kycDetails: kycData.documentNumber ? kycData : undefined,
                 bankDetails: bankData.accountNumber ? bankData : undefined,
+                documents: documents.businessRegistration || documents.identityProof ? documents : undefined,
             };
 
             await api.patch('/seller/settings', payload);
@@ -321,6 +335,28 @@ export default function SellerSettingsPage() {
                                             value={formData.gstNumber}
                                             onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
                                             className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all font-mono uppercase"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold opacity-80">Business Registration Doc URL</label>
+                                        <input
+                                            type="text"
+                                            value={documents.businessRegistration}
+                                            onChange={(e) => setDocuments({ ...documents, businessRegistration: e.target.value })}
+                                            className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                            placeholder="https://.../registration.pdf"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold opacity-80">Identity Proof Doc URL</label>
+                                        <input
+                                            type="text"
+                                            value={documents.identityProof}
+                                            onChange={(e) => setDocuments({ ...documents, identityProof: e.target.value })}
+                                            className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                            placeholder="https://.../id_proof.pdf"
                                         />
                                     </div>
                                 </div>

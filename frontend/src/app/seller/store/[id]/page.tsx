@@ -46,7 +46,7 @@ export default function B2bStorefrontPage() {
         );
     }
 
-    const { seller, activeProducts, metrics } = shopData;
+    const { seller, products: activeProducts = [], metrics = {} } = shopData;
 
     return (
         <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in zoom-in-95 duration-500">
@@ -139,19 +139,26 @@ export default function B2bStorefrontPage() {
                             <div key={product._id} className="group relative bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-accent/50 hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 flex flex-col h-full">
                                 {/* Image */}
                                 <div className="aspect-square relative bg-muted overflow-hidden">
-                                    {product.images && product.images[0] ? (
-                                        <Image
-                                            src={product.images[0]}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
-                                            <Package className="h-8 w-8 mb-2 opacity-50" />
-                                            <span className="text-xs">No image</span>
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        let imgSrc = "";
+                                        const img = product.images && product.images[0];
+                                        if (typeof img === 'string') imgSrc = img;
+                                        else if (img && typeof img === 'object') imgSrc = img.url || img.src || "";
+
+                                        return imgSrc ? (
+                                            <Image
+                                                src={imgSrc}
+                                                alt={product.name || 'Product Image'}
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
+                                                <Package className="h-8 w-8 mb-2 opacity-50" />
+                                                <span className="text-xs">No image</span>
+                                            </div>
+                                        );
+                                    })()}
                                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                                         <span className="px-2 py-1 bg-background/90 backdrop-blur-sm border border-border text-[10px] font-bold uppercase tracking-wider rounded text-green-600">
                                             B2B Ready

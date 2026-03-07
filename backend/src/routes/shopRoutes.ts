@@ -1,4 +1,4 @@
-import { Router } from 'express';
+ximport { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { Product } from '../models';
 import { Order } from '../models/Order';
@@ -73,9 +73,15 @@ router.get('/:sellerId', async (req: Request, res: Response, next: NextFunction)
             seller: {
                 id: (seller as any)._id,
                 name: (seller as any).name,
-                companyName: (seller as any).companyName,
+                companyName: (seller as any).sellerProfile?.businessName || (seller as any).companyName || (seller as any).name,
+                businessName: (seller as any).sellerProfile?.businessName || (seller as any).companyName || (seller as any).name,
+                logo: (seller as any).sellerProfile?.logo,
+                description: (seller as any).sellerProfile?.description,
+                location: (seller as any).sellerProfile?.location,
+                joinedYear: (seller as any).sellerProfile?.joinedYear,
                 verified: (seller as any).sellerProfile?.verified || false,
                 joinedAt: (seller as any).createdAt,
+                categories: (seller as any).sellerProfile?.categories || [],
             },
             metrics: {
                 totalProducts: products.length,

@@ -130,6 +130,10 @@ const SellerProfileSchema = new Schema(
         registeredAddress: { type: RegisteredAddressSchema },
         bankDetails: { type: BankDetailsSchema },
         kycDetails: { type: KycDetailsSchema },
+        documents: {
+            businessRegistration: { type: String },
+            identityProof: { type: String }
+        },
         categories: [{ type: String }],
         brandAuthorization: [{ type: String }],
         subscriptionTier: {
