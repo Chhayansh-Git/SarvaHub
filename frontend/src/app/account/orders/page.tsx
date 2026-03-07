@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Package, ArrowLeft, RefreshCcw, Star, ChevronRight, MapPin, Search, Loader2 } from "lucide-react";
+import { Package, ArrowLeft, RefreshCcw, Star, ChevronRight, MapPin, Search, Loader2, XCircle } from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function MyOrdersPage() {
     const { isAuthenticated } = useUserStore();
@@ -54,6 +55,20 @@ export default function MyOrdersPage() {
             case 'Processing': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
             case 'Cancelled': return 'text-red-500 bg-red-500/10 border-red-500/20';
             default: return 'text-muted-foreground bg-muted border-border';
+        }
+    };
+
+    const handleCancelOrder = async (orderId: string) => {
+        if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) return;
+        try {
+            await api.patch(`/orders/${orderId}/cancel`, {});
+            setOrders(prev => prev.map(o => {
+                const oid = o._id || o.id;
+                if (oid === orderId) return { ...o, status: 'Cancelled', statusLabel: 'Cancelled' };
+                return o;
+            }));
+        } catch (error: any) {
+            alert(error.message || 'Failed to cancel order.');
         }
     };
 
@@ -173,6 +188,16 @@ export default function MyOrdersPage() {
                                                         <div className="flex gap-4 mt-2">
                                                             <button className="text-xs font-semibold hover:text-accent transition-colors">Return Item</button>
                                                             <button className="text-xs font-semibold hover:text-accent transition-colors">Write Review</button>
+                                                        </div>
+                                                    )}
+                                                    {['Pending', 'Confirmed', 'Processing', 'pending', 'confirmed', 'processing'].includes(order.status) && (
+                                                        <div className="flex gap-4 mt-2">
+                                                            <button
+                                                                onClick={() => handleCancelOrder(order._id || order.id)}
+                                                                className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                                                            >
+                                                                <XCircle className="h-3 w-3" /> Cancel Order
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>

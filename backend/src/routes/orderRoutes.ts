@@ -13,6 +13,7 @@ import {
     getSellerFeedback,
     createB2bOrder,
     getUserReturns,
+    cancelOrder,
 } from '../controllers/orderController';
 
 const router = Router();
@@ -25,6 +26,7 @@ router.get('/', getUserOrders);
 router.get('/returns', getUserReturns);
 router.get('/:id', getOrderById);
 router.post('/b2b', createB2bOrder);
+router.patch('/:id/cancel', cancelOrder);
 router.post('/:id/review', submitReview);
 router.post('/:id/return', submitReturn);
 

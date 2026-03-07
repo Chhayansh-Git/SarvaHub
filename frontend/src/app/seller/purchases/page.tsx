@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Package, ChevronRight, Search, Loader2, Clock, Truck, CheckCircle, AlertTriangle, ShoppingBag, ArrowUpRight, MessageSquare } from "lucide-react";
+import { Package, ChevronRight, Search, Loader2, Clock, Truck, CheckCircle, AlertTriangle, ShoppingBag, ArrowUpRight, MessageSquare, XCircle } from "lucide-react";
 
 export default function SellerPurchasesPage() {
     const router = useRouter();
@@ -30,6 +30,20 @@ export default function SellerPurchasesPage() {
         };
         fetchPurchases();
     }, []);
+
+    const handleCancelOrder = async (orderId: string) => {
+        if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) return;
+        try {
+            await api.patch(`/orders/${orderId}/cancel`, {});
+            setOrders(prev => prev.map(o => {
+                const oid = o._id || o.id;
+                if (oid === orderId) return { ...o, status: 'cancelled', statusLabel: 'Cancelled' };
+                return o;
+            }));
+        } catch (error: any) {
+            alert(error.message || 'Failed to cancel order.');
+        }
+    };
 
     const getStatusIcon = (status: string) => {
         const s = status?.toLowerCase();
@@ -199,6 +213,14 @@ export default function SellerPurchasesPage() {
                                                 <MessageSquare className="h-3 w-3" /> Raise Complaint
                                             </button>
                                         </>
+                                    )}
+                                    {['pending', 'confirmed', 'processing'].includes(order.status?.toLowerCase()) && (
+                                        <button
+                                            onClick={() => handleCancelOrder(order._id || order.id)}
+                                            className="text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                                        >
+                                            <XCircle className="h-3 w-3" /> Cancel Order
+                                        </button>
                                     )}
                                 </div>
                                 <Link

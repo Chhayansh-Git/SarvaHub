@@ -453,3 +453,43 @@ export async function createB2bOrder(req: Request, res: Response, next: NextFunc
         next(err);
     }
 }
+
+// POST /api/v1/orders/:id/cancel — cancel an order (buyer only, before shipment)
+export async function cancelOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) return next(new AppError(404, 'NOT_FOUND', 'Order not found.'));
+
+        // Only the buyer who placed the order can cancel it
+        if (String(order.user) !== String(req.user!.id)) {
+            return next(new AppError(403, 'FORBIDDEN', 'You can only cancel your own orders.'));
+        }
+
+        const cancellableStatuses = ['pending', 'confirmed', 'processing'];
+        if (!cancellableStatuses.includes(order.status?.toLowerCase())) {
+            return next(new AppError(400, 'BAD_REQUEST', `Cannot cancel an order with status "${order.status}". Only pending, confirmed, or processing orders can be cancelled.`));
+        }
+
+        order.status = 'cancelled';
+        order.statusLabel = 'Cancelled';
+        await order.save();
+
+        // Restore product stock
+        try {
+            const { Product } = await import('../models/Product');
+            for (const item of order.items || []) {
+                if (item.productId) {
+                    await Product.findByIdAndUpdate(item.productId, {
+                        $inc: { stock: item.quantity || 0 }
+                    });
+                }
+            }
+        } catch (stockErr) {
+            console.error('Failed to restore stock after cancellation:', stockErr);
+        }
+
+        res.json({ message: 'Order cancelled successfully.', order });
+    } catch (err) {
+        next(err);
+    }
+}
