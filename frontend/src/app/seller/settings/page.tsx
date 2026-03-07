@@ -39,6 +39,12 @@ export default function SellerSettingsPage() {
         bankName: "",
     });
 
+    // Always fetch the latest user data on mount
+    useEffect(() => {
+        fetchUser();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     useEffect(() => {
         if (user?.sellerProfile) {
             const profile = user.sellerProfile;
@@ -48,9 +54,9 @@ export default function SellerSettingsPage() {
                 gstNumber: profile.gstNumber || "",
                 panNumber: profile.panNumber || "",
                 founderName: profile.contactPerson?.name || "",
-                email: profile.contactEmail || profile.contactPerson?.email || "",
+                email: profile.contactEmail || profile.contactPerson?.email || user.email || "",
                 phone: profile.contactPhone || profile.contactPerson?.phone || "",
-                address: profile.location || profile.registeredAddress?.line1 || "",
+                address: profile.registeredAddress?.line1 || profile.location || "",
                 category: (profile.categories && profile.categories[0]) || "",
             });
 
@@ -189,8 +195,60 @@ export default function SellerSettingsPage() {
                                         <option value="">Select Category</option>
                                         <option value="Luxury Watches">Luxury Watches</option>
                                         <option value="Designer Handbags">Designer Handbags</option>
+                                        <option value="Fine Jewelry">Fine Jewelry</option>
+                                        <option value="Fragrances">Fragrances</option>
+                                        <option value="Premium Audio">Premium Audio</option>
+                                        <option value="Sunglasses">Sunglasses</option>
+                                        <option value="Luxury Pens">Luxury Pens</option>
+                                        <option value="Home Décor">Home Décor</option>
                                         <option value="Fashion">Fashion</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold opacity-80">Contact Email</label>
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                        placeholder="contact@company.com"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold opacity-80">Contact Phone</label>
+                                    <input
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                        className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                        placeholder="+91 98765 43210"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold opacity-80">GSTIN</label>
+                                    <input
+                                        type="text"
+                                        value={formData.gstNumber}
+                                        onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+                                        className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all font-mono uppercase"
+                                        placeholder="27XXXXX0000X1Z5"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold opacity-80">PAN / CIN</label>
+                                    <input
+                                        type="text"
+                                        value={formData.panNumber}
+                                        onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                                        className="w-full bg-muted/50 border-transparent rounded-xl px-4 py-3 text-sm focus:border-accent focus:ring-1 focus:ring-accent transition-all font-mono uppercase"
+                                        placeholder="ABCDE1234F"
+                                    />
                                 </div>
                             </div>
 

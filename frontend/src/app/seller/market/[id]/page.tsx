@@ -32,7 +32,6 @@ export default function MarketProductPage() {
     const [product, setProduct] = useState<ProductDetails | null>(null);
     const [analytics, setAnalytics] = useState<Analytics | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isOrdering, setIsOrdering] = useState(false);
     const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
@@ -50,30 +49,9 @@ export default function MarketProductPage() {
         fetchProduct();
     }, [params.id]);
 
-    const [orderSuccess, setOrderSuccess] = useState(false);
-
-    const handleB2BOrder = async () => {
+    const handleB2BOrder = () => {
         if (!product) return;
-        setIsOrdering(true);
-        try {
-            await api.post('/orders/b2b', {
-                productId: product._id,
-                quantity,
-                shippingAddress: {
-                    line1: "B2B Restock Order",
-                    city: "Seller HQ",
-                    state: "NA",
-                    pincode: "000000",
-                },
-            });
-            setOrderSuccess(true);
-            setTimeout(() => router.push('/seller/purchases'), 2000);
-        } catch (error: any) {
-            console.error("B2B Order failed:", error);
-            alert(error.message || "Failed to place B2B order.");
-        } finally {
-            setIsOrdering(false);
-        }
+        router.push(`/seller/checkout?productId=${product._id}&qty=${quantity}`);
     };
 
     if (isLoading) {
@@ -200,28 +178,18 @@ export default function MarketProductPage() {
                             </div>
                         </div>
 
-                        {orderSuccess ? (
-                            <div className="text-center p-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 animate-in fade-in zoom-in duration-300">
-                                <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
-                                <h4 className="text-lg font-bold text-emerald-500">Order Authorized!</h4>
-                                <p className="text-sm text-muted-foreground mt-1">Redirecting to your purchases...</p>
-                            </div>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={handleB2BOrder}
-                                    disabled={isOrdering || product.stock < 1}
-                                    className="w-full py-4 bg-foreground text-background font-black rounded-xl hover:bg-accent hover:text-white hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {isOrdering ? <Loader2 className="w-5 h-5 animate-spin" /> : "Authorize Purchase"}
-                                </button>
+                        <button
+                            onClick={handleB2BOrder}
+                            disabled={product.stock < 1}
+                            className="w-full py-4 bg-foreground text-background font-black rounded-xl hover:bg-accent hover:text-white hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            Proceed to Checkout
+                        </button>
 
-                                <div className="mt-4 flex items-start gap-2 rounded-lg bg-blue-500/10 p-3 text-xs text-blue-500">
-                                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                                    <p>B2B orders are processed through your verified seller account credit line and shipped to your primary warehouse.</p>
-                                </div>
-                            </>
-                        )}
+                        <div className="mt-4 flex items-start gap-2 rounded-lg bg-blue-500/10 p-3 text-xs text-blue-500">
+                            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                            <p>You will be taken to the checkout page to complete shipping and payment details.</p>
+                        </div>
                     </div>
 
                     {/* Key Metrics */}
