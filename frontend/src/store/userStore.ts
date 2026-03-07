@@ -8,6 +8,8 @@ export interface User {
     role: 'consumer' | 'seller' | 'admin';
     avatar?: string;
     sellerProfile?: any;
+    isEmailVerified?: boolean;
+    isPhoneVerified?: boolean;
 }
 
 interface AuthState {

@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User } from '../models';
-import { config } from '../config';
-import { Errors } from '../utils/errors';
-import { sendWelcomeEmail } from '../services/emailService';
+import { User } from '../../models';
+import { config } from '../../config';
+import { Errors } from '../../utils/errors';
+import { sendWelcomeEmail } from '../../services/emailService';
 
 const SALT_ROUNDS = 10;
 
 /**
  * Generate a JWT access token.
  */
-function signToken(payload: { id: string; email: string; role: string }): string {
+export function signToken(payload: { id: string; email: string; role: string }): string {
     return jwt.sign(payload, config.jwt.secret, {
         expiresIn: config.jwt.expiresIn,
     } as jwt.SignOptions);
@@ -20,7 +20,7 @@ function signToken(payload: { id: string; email: string; role: string }): string
 /**
  * Set the access token as an HttpOnly cookie.
  */
-function setTokenCookie(res: Response, token: string): void {
+export function setTokenCookie(res: Response, token: string): void {
     res.cookie('accessToken', token, {
         httpOnly: true,
         secure: config.nodeEnv === 'production',

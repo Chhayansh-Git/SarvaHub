@@ -16,6 +16,9 @@ export default function ProfileSettingsPage() {
     const [activeTab, setActiveTab] = useState<'personal' | 'security'>('personal');
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+    const [passwordStep, setPasswordStep] = useState<'request' | 'verify'>('request');
+    const [otpCode, setOtpCode] = useState('');
+
     // Form State
     const [formData, setFormData] = useState({
         name: user?.name || "",
@@ -95,6 +98,11 @@ export default function ProfileSettingsPage() {
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
+        setPasswordStep('request'); // We are now relying purely on OTP changes
+        return;
+    };
+
+    const requestPasswordChangeOtp = async () => {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             return alert("New passwords do not match.");
         }
@@ -104,15 +112,40 @@ export default function ProfileSettingsPage() {
 
         setIsLoading(true);
         try {
-            await api.post('/users/change-password', {
-                currentPassword: passwordData.currentPassword,
+            // Send OTP to user's registered email/phone
+            await api.post('/auth/send-otp', {
+                identifier: user.email,
+                channel: 'email'
+            });
+            setPasswordStep('verify');
+            alert(`OTP sent to ${user.email}`);
+        } catch (error: any) {
+            console.error("Failed to send OTP", error);
+            alert(error.message || "Failed to send OTP. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const verifyAndChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            // Standard approach: verify the OTP, then update the password
+            // We can reuse the reset-password endpoint since the user is authenticated, 
+            // or modify the existing change-password. Let's use the new reset-password endpoint to keep it uniform.
+            await api.post('/auth/reset-password', {
+                email: user.email,
+                code: otpCode,
                 newPassword: passwordData.newPassword
             });
             alert("Password updated successfully!");
             setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+            setOtpCode('');
+            setPasswordStep('request');
         } catch (error: any) {
             console.error("Password change failed", error);
-            alert(error.message || "Failed to change password. Please check your current password.");
+            alert(error.message || "Invalid OTP or failed to change password.");
         } finally {
             setIsLoading(false);
         }
@@ -211,6 +244,8 @@ export default function ProfileSettingsPage() {
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                                disabled
+                                                title="Email cannot be changed directly"
                                             />
                                         </div>
                                         <div className="space-y-2 sm:col-span-2">
@@ -249,63 +284,83 @@ export default function ProfileSettingsPage() {
                         )}
 
                         {activeTab === 'security' && (
-                            <form onSubmit={handlePasswordChange} className="glass-panel p-8 rounded-3xl border border-border/50">
+                            <div className="glass-panel p-8 rounded-3xl border border-border/50">
                                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                                     <Lock className="h-6 w-6 text-accent" /> Password Settings
                                 </h3>
 
-                                <div className="space-y-6 max-w-md">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-muted-foreground">Current Password</label>
-                                        <input
-                                            type="password"
-                                            required
-                                            value={passwordData.currentPassword}
-                                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                                            className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
-                                        />
-                                    </div>
+                                {passwordStep === 'request' ? (
+                                    <form onSubmit={(e) => { e.preventDefault(); requestPasswordChangeOtp(); }} className="space-y-6 max-w-md">
+                                        <p className="text-sm text-muted-foreground mb-4">We will send an OTP to your registered email to verify this change.</p>
 
-                                    <div className="border-t border-border/50 my-6"></div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-muted-foreground">New Password</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={passwordData.newPassword}
+                                                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                                className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                            />
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-muted-foreground">New Password</label>
-                                        <input
-                                            type="password"
-                                            required
-                                            value={passwordData.newPassword}
-                                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                            className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
-                                        />
-                                    </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-muted-foreground">Confirm New Password</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={passwordData.confirmPassword}
+                                                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                                className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                            />
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-muted-foreground">Confirm New Password</label>
-                                        <input
-                                            type="password"
-                                            required
-                                            value={passwordData.confirmPassword}
-                                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                            className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
-                                        />
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="w-full py-4 mt-6 bg-foreground text-background font-bold text-lg rounded-xl flex items-center justify-center gap-2 hover:bg-primary transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-lg"
-                                    >
-                                        {isLoading ? (
-                                            <>
+                                        <button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="w-full py-4 mt-6 bg-foreground text-background font-bold text-lg rounded-xl flex items-center justify-center gap-2 hover:bg-primary transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-lg"
+                                        >
+                                            {isLoading ? (
                                                 <Loader2 className="h-5 w-5 animate-spin" />
-                                                Updating Password...
-                                            </>
-                                        ) : (
-                                            'Update Password'
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
+                                            ) : (
+                                                'Request Password Change (OTP)'
+                                            )}
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <form onSubmit={verifyAndChangePassword} className="space-y-6 max-w-md">
+                                        <div className="p-4 bg-accent/10 border border-accent/20 rounded-xl mb-4">
+                                            <p className="text-sm font-medium text-foreground">An OTP has been sent to {user.email}. Enter it below to confirm your new password.</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-muted-foreground">Verification Code</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                maxLength={6}
+                                                value={otpCode}
+                                                onChange={(e) => setOtpCode(e.target.value)}
+                                                className="w-full bg-background border border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all tracking-widest text-center font-mono"
+                                                placeholder="000000"
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="w-full py-4 mt-6 bg-accent text-accent-foreground font-bold text-lg rounded-xl flex items-center justify-center gap-2 hover:bg-accent/90 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-lg"
+                                        >
+                                            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Verify & Change Password'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPasswordStep('request')}
+                                            className="w-full mt-2 text-sm text-center text-muted-foreground font-semibold hover:text-foreground"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>

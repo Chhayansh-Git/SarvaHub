@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Order } from '../models/Order';
 import { Review } from '../models/Review';
 import { ReturnRequest } from '../models/ReturnRequest';
+import { User } from '../models/User';
 import { AppError } from '../utils/errors';
 import { sendShippingUpdate } from '../services/emailService';
 
@@ -382,7 +383,16 @@ export async function getMarketInsightProduct(req: Request, res: Response, next:
 export async function createB2bOrder(req: Request, res: Response, next: NextFunction) {
     try {
         const { Product } = await import('../models/Product');
-        const { productId, quantity, shippingAddress } = req.body;
+        const { productId, quantity, shippingAddress, requireVerification } = req.body;
+
+        // --- OTP Verification Check ---
+        if (requireVerification) {
+            const { User } = await import('../models/User'); // Import User model here
+            const user = await User.findById(req.user!.id);
+            if (!user?.isEmailVerified && !user?.isPhoneVerified) {
+                return next(new AppError(403, 'VERIFICATION_REQUIRED', 'Please verify your phone or email before placing this order.'));
+            }
+        }
 
         if (!productId || !quantity || quantity < 1) {
             return next(new AppError(400, 'BAD_REQUEST', 'Valid product ID and quantity are required.'));

@@ -172,6 +172,9 @@ export interface IUser {
     email: string;
     password: string;
     phone: string | null;
+    googleId?: string;
+    isEmailVerified?: boolean;
+    isPhoneVerified?: boolean;
     role: 'consumer' | 'seller' | 'admin';
     avatar: string | null;
     addresses: Array<{
@@ -206,6 +209,11 @@ const UserSchema = new Schema(
         email: { type: String, required: true, unique: true, lowercase: true, trim: true },
         password: { type: String, required: true, select: false },
         phone: { type: String, default: null },
+        googleId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
         role: {
             type: String,
             enum: ['consumer', 'seller', 'admin'],

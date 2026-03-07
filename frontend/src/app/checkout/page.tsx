@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Check, ChevronRight, ShieldCheck, Lock, CreditCard } from "lucide-react";
+import { Check, ChevronRight, ShieldCheck, Lock, CreditCard, X, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/store/cartStore";
 import { useUserStore } from "@/store/userStore";
@@ -15,7 +15,7 @@ export default function CheckoutPage() {
     const [orderId, setOrderId] = useState<string | null>(null);
 
     const { items, subtotal, clearCart } = useCartStore();
-    const { user } = useUserStore();
+    const { user, setUser } = useUserStore();
 
     const shipping = subtotal >= 499 ? 0 : 49; // Free above ₹499
     const taxes = useMemo(() => Math.round(subtotal * 0.18 * 100) / 100, [subtotal]); // 18% GST
@@ -31,26 +31,16 @@ export default function CheckoutPage() {
         city: '',
     });
 
-    const handlePlaceOrder = async () => {
-        if (!shippingData.firstName || !shippingData.lastName || !shippingData.address || !shippingData.city || !shippingData.email || !shippingData.pincode) {
-            alert('Please fill out all shipping fields.');
-            setStep(1);
-            return;
-        }
-        if (!/^\d{6}$/.test(shippingData.pincode)) {
-            alert('Please enter a valid 6-digit PIN code.');
-            setStep(1);
-            return;
-        }
-        if (!/^\S+@\S+\.\S+$/.test(shippingData.email)) {
-            alert('Please enter a valid email address.');
-            setStep(1);
-            return;
-        }
+    // Verification Modal State
+    const [showVerificationModal, setShowVerificationModal] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
+    const placeOrderCall = async (verificationCode?: string) => {
         setIsProcessing(true);
         try {
-            const data = await api.post<{ orderId: string; order: any }>('/checkout/intent', {
+            const payload: any = {
                 items: items.map(item => ({
                     productId: item.productId,
                     quantity: item.quantity,
@@ -65,15 +55,77 @@ export default function CheckoutPage() {
                     pincode: shippingData.pincode,
                     city: shippingData.city,
                 },
-            });
+            };
+
+            if (verificationCode) {
+                payload.verificationCode = verificationCode;
+            }
+
+            const data = await api.post<{ orderId: string; order: any }>('/checkout/intent', payload);
             setOrderId(data.orderId || data.order?._id || 'PENDING');
             clearCart();
+            // Optional: If user verified via checkout, optimistic update their verified status in local store
+            if (verificationCode && user) {
+                setUser({ ...user, isEmailVerified: true });
+            }
             setStep(3);
+            setShowVerificationModal(false);
         } catch (error: any) {
-            // Show error instead of faking success
             alert(error.message || 'Payment failed. Please try again.');
         } finally {
             setIsProcessing(false);
+        }
+    };
+
+    const handlePlaceOrder = async () => {
+        if (!shippingData.firstName || !shippingData.lastName || !shippingData.address || !shippingData.city || !shippingData.email || !shippingData.pincode) {
+            alert('Please fill out all shipping fields.');
+            setStep(1);
+            return;
+        }
+
+        // Before placing order, if user is logged in but unverified, prompt OTP
+        // Or if they are guest, but we want to verify the email they provided.
+        // The backend `requireVerification` logic will throw an error if missing, 
+        // but we can proactively trigger it here if configured.
+        const isVerified = user?.isEmailVerified || user?.isPhoneVerified;
+
+        // For security, if they are not verified, show the OTP modal
+        if (user && !isVerified) {
+            sendVerificationOtp();
+            setShowVerificationModal(true);
+            return;
+        }
+
+        // Proceed normally
+        await placeOrderCall();
+    };
+
+    const sendVerificationOtp = async () => {
+        setIsSendingOtp(true);
+        try {
+            await api.post('/auth/send-otp', {
+                identifier: shippingData.email || user?.email,
+                channel: 'email'
+            });
+            // Don't show success alert to not interrupt flow, modal opens
+        } catch (error: any) {
+            alert("Failed to send verification email. " + (error.message || ""));
+            setShowVerificationModal(false); // abort
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
+
+    const handleVerifyOtpAndPlaceOrder = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsVerifyingOtp(true);
+        try {
+            // Can hit /auth/verify-otp if it marks user as verified, or just pass code to /checkout/intent
+            // backend /checkout/intent checks the OTP if `verificationCode` is present
+            await placeOrderCall(otpCode);
+        } finally {
+            setIsVerifyingOtp(false);
         }
     };
 
@@ -110,6 +162,54 @@ export default function CheckoutPage() {
 
     return (
         <div className="min-h-screen pt-24 pb-20 bg-muted/20">
+            {/* Setup OTP Modal Overlay */}
+            {showVerificationModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+                    <div className="bg-background w-full max-w-md p-8 rounded-3xl shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
+                        <button onClick={() => setShowVerificationModal(false)} className="absolute top-4 right-4 p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-accent/20">
+                                <ShieldCheck className="h-8 w-8 text-accent" />
+                            </div>
+                            <h3 className="text-2xl font-bold mb-2">Verify Your Order</h3>
+                            <p className="text-sm text-muted-foreground">
+                                For your security, please verify your email address before finalizing the order. We sent a code to <span className="font-bold text-foreground">{shippingData.email || user?.email}</span>.
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleVerifyOtpAndPlaceOrder} className="space-y-4">
+                            <div>
+                                <input
+                                    type="text"
+                                    required
+                                    maxLength={6}
+                                    placeholder="000000"
+                                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-center text-xl tracking-widest font-mono focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                                    value={otpCode}
+                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={isVerifyingOtp || otpCode.length < 6 || isSendingOtp}
+                                className="w-full py-3 bg-foreground text-background font-bold rounded-xl hover:bg-primary transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                            >
+                                {isVerifyingOtp ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Complete Final Payment"}
+                            </button>
+                            <div className="text-center mt-4">
+                                <button type="button" onClick={sendVerificationOtp} disabled={isSendingOtp} className="text-sm text-accent hover:underline disabled:opacity-50 font-semibold">
+                                    {isSendingOtp ? "Sending..." : "Resend Code"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+
             <div className="container mx-auto px-4 max-w-6xl">
 
                 {/* Checkout Header / Breadcrumbs */}
@@ -221,7 +321,7 @@ export default function CheckoutPage() {
                                     </div>
                                     <button
                                         onClick={handlePlaceOrder}
-                                        disabled={isProcessing}
+                                        disabled={isProcessing || isSendingOtp || isVerifyingOtp}
                                         className="w-full py-4 mt-8 bg-foreground text-background font-bold text-lg rounded-xl flex items-center justify-center hover:bg-primary transition-colors shadow-lg disabled:opacity-50"
                                     >
                                         {isProcessing ? 'Processing...' : `Pay ₹${total.toLocaleString('en-IN')}`}
