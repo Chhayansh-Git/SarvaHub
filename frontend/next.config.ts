@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  experimental: {
+    // @ts-ignore - Next.js config types sometimes lag behind experimental features
+    turbopack: {
+      root: process.cwd(),
+    },
+  },
 };
 
 export default nextConfig;
